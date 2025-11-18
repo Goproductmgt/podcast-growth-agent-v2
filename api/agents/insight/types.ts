@@ -60,7 +60,7 @@ export const INSIGHT_SCHEMA = {
               description: 'Optional explanation when translating regional variations or jargon'
             }
           },
-          required: ['keyword', 'category', 'search_potential'],
+          required: ['keyword', 'category', 'search_potential', 'semantic_note'],
           additionalProperties: false
         },
         description: 'Exactly 5 keywords',

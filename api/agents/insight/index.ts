@@ -1,6 +1,6 @@
 // ============================================================================
 // AGENT: INSIGHT - Runner
-// Executes the Insight agent with OpenAI API
+// Executes the Insight agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
 import OpenAI from 'openai';
@@ -14,6 +14,20 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Type definition for message output item
+interface MessageOutputItem {
+  type: 'message';
+  content: Array<{
+    type: string;
+    text?: string;
+  }>;
+}
+
+// Type guard to check if an output item is a message
+function isMessageItem(item: any): item is MessageOutputItem {
+  return item && item.type === 'message' && Array.isArray(item.content);
+}
+
 export async function runInsightAgent(transcript: string): Promise<AgentResult> {
   const startTime = Date.now();
   
@@ -21,33 +35,43 @@ export async function runInsightAgent(transcript: string): Promise<AgentResult> 
     // Build the full prompt with system context
     const fullPrompt = buildSystemPrompt('Insight', INSIGHT_PROMPT, transcript);
     
-    // Call OpenAI with Structured Outputs
-    const response = await openai.chat.completions.create({
+    // Call OpenAI Responses API (GPT-5)
+    const response = await openai.responses.create({
       model: INSIGHT_CONFIG.model,
-      messages: [
-        {
-          role: 'user',
-          content: fullPrompt
-        }
-      ],
-      temperature: INSIGHT_CONFIG.temperature,
-      max_tokens: INSIGHT_CONFIG.max_tokens,
-      response_format: {
-        type: 'json_schema',
-        json_schema: INSIGHT_SCHEMA
-      },
-      // GPT-5 specific parameters
-      // @ts-ignore - These params exist but TypeScript definitions may not be updated
+      input: fullPrompt,
+      max_output_tokens: INSIGHT_CONFIG.max_tokens,
       reasoning: {
-        effort: INSIGHT_CONFIG.reasoning_effort
+        effort: INSIGHT_CONFIG.reasoning_effort as 'low' | 'medium' | 'high'
       },
       text: {
-        verbosity: INSIGHT_CONFIG.verbosity
+        verbosity: INSIGHT_CONFIG.verbosity as 'low' | 'medium' | 'high',
+        format: {
+          type: 'json_schema',
+          name: INSIGHT_SCHEMA.name,
+          schema: INSIGHT_SCHEMA.schema,
+          strict: INSIGHT_SCHEMA.strict
+        }
       }
     });
 
     const processingTime = Date.now() - startTime;
-    const content = response.choices[0]?.message?.content;
+    
+    // Extract JSON content from Responses API
+    // GPT-5 Responses API puts JSON in output_text at the top level (most reliable)
+    let content: string | undefined = (response as any).output_text;
+    
+    // Fallback: look for message type in output array
+    if (!content && Array.isArray(response.output)) {
+      const messageItem = response.output.find(isMessageItem);
+      
+      // Runtime check confirmed it's a message, cast for property access
+      if (messageItem) {
+        const firstContent = (messageItem as any).content[0];
+        if (firstContent && firstContent.text) {
+          content = firstContent.text;
+        }
+      }
+    }
 
     if (!content) {
       throw new Error('No content returned from OpenAI');
@@ -63,8 +87,8 @@ export async function runInsightAgent(transcript: string): Promise<AgentResult> 
       error: null,
       processing_time: processingTime,
       tokens_used: {
-        input: response.usage?.prompt_tokens || 0,
-        output: response.usage?.completion_tokens || 0
+        input: response.usage?.input_tokens ?? 0,
+        output: response.usage?.output_tokens ?? 0
       }
     };
 

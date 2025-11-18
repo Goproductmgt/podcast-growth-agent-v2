@@ -1,0 +1,45 @@
+{
+  "episode_id": "episode-1763492126183",
+  "transcript_length": 62450,
+  "processing_time": 2133,
+  "timestamp": "2025-11-18T18:55:28.318Z",
+  "agents": {
+    "insight": null,
+    "hook": null,
+    "spotlight": null,
+    "amplify": null,
+    "pulse": null
+  },
+  "errors": [
+    {
+      "agent": "insight",
+      "error": "400 Unknown parameter: 'reasoning'.",
+      "timestamp": "2025-11-18T18:55:28.317Z"
+    },
+    {
+      "agent": "hook",
+      "error": "400 Unknown parameter: 'reasoning'.",
+      "timestamp": "2025-11-18T18:55:28.318Z"
+    },
+    {
+      "agent": "spotlight",
+      "error": "400 Unknown parameter: 'reasoning'.",
+      "timestamp": "2025-11-18T18:55:28.318Z"
+    },
+    {
+      "agent": "amplify",
+      "error": "400 Unknown parameter: 'reasoning'.",
+      "timestamp": "2025-11-18T18:55:28.318Z"
+    },
+    {
+      "agent": "pulse",
+      "error": "400 Unknown parameter: 'reasoning'.",
+      "timestamp": "2025-11-18T18:55:28.318Z"
+    }
+  ],
+  "summary": {
+    "agents_succeeded": 0,
+    "agents_failed": 5,
+    "total_agents": 5
+  }
+}
