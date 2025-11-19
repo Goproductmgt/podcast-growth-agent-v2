@@ -1,19 +1,28 @@
 // ============================================================================
 // AGENT: SPOTLIGHT - Types & Schema
-// Quotes + Ready-to-Post Caption
+// Shareable quotes optimized for video/reels + ready-to-post caption
+// ============================================================================
+
+// ============================================================================
+// TypeScript Interface (for type safety in code)
 // ============================================================================
 
 export interface ShareableQuote {
-  quote: string; // Under 280 characters
+  quote: string;
   timestamp: string; // HH:MM:SS format
   hashtags: string[]; // Exactly 2
-  platform_notes: string; // Video creation guidance
+  platform_notes: string;
 }
 
 export interface SpotlightOutput {
-  shareable_quotes: ShareableQuote[]; // Exactly 3
-  ready_to_post_caption: string; // Under 500 characters with CTA
+  shareable_quotes: ShareableQuote[]; // Exactly 3 quotes
+  ready_to_post_caption: string;
 }
+
+// ============================================================================
+// JSON Schema (for OpenAI Structured Outputs)
+// CRITICAL: unwrap properties at top level (name, schema, strict)
+// ============================================================================
 
 export const SPOTLIGHT_SCHEMA = {
   name: 'spotlight_output',
@@ -28,39 +37,42 @@ export const SPOTLIGHT_SCHEMA = {
           properties: {
             quote: {
               type: 'string',
-              description: 'Lightly refined quote under 280 characters'
+              description: 'Shareable quote under 280 characters',
+              maxLength: 280
             },
             timestamp: {
               type: 'string',
-              description: 'Exact timestamp in HH:MM:SS format'
+              description: 'Timestamp in HH:MM:SS format',
+              pattern: '^[0-9]{2}:[0-9]{2}:[0-9]{2}$'
             },
             hashtags: {
               type: 'array',
               items: {
                 type: 'string'
               },
-              description: 'Exactly 2 targeted hashtags',
               minItems: 2,
-              maxItems: 2
+              maxItems: 2,
+              description: 'Exactly 2 hashtags (one broad, one specific)'
             },
             platform_notes: {
               type: 'string',
-              description: 'Visual treatment and platform recommendations for video/reel'
+              description: 'Video creation guidance for social platforms'
             }
           },
           required: ['quote', 'timestamp', 'hashtags', 'platform_notes'],
           additionalProperties: false
         },
-        description: 'Exactly 3 shareable quotes optimized for video',
         minItems: 3,
-        maxItems: 3
+        maxItems: 3,
+        description: 'Exactly 3 shareable quotes'
       },
       ready_to_post_caption: {
         type: 'string',
-        description: 'Complete social caption under 500 chars with hook, quote reference, and CTA'
+        description: 'Ready-to-post caption under 500 characters',
+        maxLength: 500
       }
     },
     required: ['shareable_quotes', 'ready_to_post_caption'],
     additionalProperties: false
   }
-};
+} as const;

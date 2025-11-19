@@ -1,5 +1,6 @@
 // ============================================================================
 // AGENT: SPOTLIGHT - Runner
+// Executes the Spotlight agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
 import OpenAI from 'openai';
@@ -13,33 +14,70 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// Type definition for message output item
+interface MessageOutputItem {
+  type: 'message';
+  content: Array<{
+    type: string;
+    text?: string;
+  }>;
+}
+
+// Type guard to check if an output item is a message
+function isMessageItem(item: any): item is MessageOutputItem {
+  return item && item.type === 'message' && Array.isArray(item.content);
+}
+
 export async function runSpotlightAgent(transcript: string): Promise<AgentResult> {
   const startTime = Date.now();
   
   try {
+    // Build the full prompt with system context
     const fullPrompt = buildSystemPrompt('Spotlight', SPOTLIGHT_PROMPT, transcript);
     
-    const response = await openai.chat.completions.create({
+    // Call OpenAI Responses API (GPT-5)
+    const response = await openai.responses.create({
       model: SPOTLIGHT_CONFIG.model,
-      messages: [{ role: 'user', content: fullPrompt }],
-      temperature: SPOTLIGHT_CONFIG.temperature,
-      max_tokens: SPOTLIGHT_CONFIG.max_tokens,
-      response_format: {
-        type: 'json_schema',
-        json_schema: SPOTLIGHT_SCHEMA
+      input: fullPrompt,
+      max_output_tokens: SPOTLIGHT_CONFIG.max_tokens,
+      reasoning: {
+        effort: SPOTLIGHT_CONFIG.reasoning_effort as 'low' | 'medium' | 'high'
       },
-      // @ts-ignore
-      reasoning: { effort: SPOTLIGHT_CONFIG.reasoning_effort },
-      text: { verbosity: SPOTLIGHT_CONFIG.verbosity }
+      text: {
+        verbosity: SPOTLIGHT_CONFIG.verbosity as 'low' | 'medium' | 'high',
+        format: {
+          type: 'json_schema',
+          name: SPOTLIGHT_SCHEMA.name,
+          schema: SPOTLIGHT_SCHEMA.schema,
+          strict: SPOTLIGHT_SCHEMA.strict
+        }
+      }
     });
 
     const processingTime = Date.now() - startTime;
-    const content = response.choices[0]?.message?.content;
+    
+    // Extract JSON content from Responses API
+    // GPT-5 Responses API puts JSON in output_text at the top level (most reliable)
+    let content: string | undefined = (response as any).output_text;
+    
+    // Fallback: look for message type in output array
+    if (!content && Array.isArray(response.output)) {
+      const messageItem = response.output.find(isMessageItem);
+      
+      // Runtime check confirmed it's a message, cast for property access
+      if (messageItem) {
+        const firstContent = (messageItem as any).content[0];
+        if (firstContent && firstContent.text) {
+          content = firstContent.text;
+        }
+      }
+    }
 
     if (!content) {
       throw new Error('No content returned from OpenAI');
     }
 
+    // Parse the JSON response
     const data: SpotlightOutput = JSON.parse(content);
 
     return {
@@ -49,8 +87,8 @@ export async function runSpotlightAgent(transcript: string): Promise<AgentResult
       error: null,
       processing_time: processingTime,
       tokens_used: {
-        input: response.usage?.prompt_tokens || 0,
-        output: response.usage?.completion_tokens || 0
+        input: response.usage?.input_tokens ?? 0,
+        output: response.usage?.output_tokens ?? 0
       }
     };
 
