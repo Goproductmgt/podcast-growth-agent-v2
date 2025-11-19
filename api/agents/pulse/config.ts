@@ -1,5 +1,6 @@
 // ============================================================================
 // AGENT: PULSE - Configuration
+// GPT-5 settings for trend connection and semantic matching
 // ============================================================================
 
 import { AgentConfig } from '../shared/types';
@@ -7,9 +8,9 @@ import { AgentConfig } from '../shared/types';
 export const PULSE_CONFIG: AgentConfig = {
   name: 'Pulse',
   model: 'gpt-5',
-  temperature: 0.6, // Balanced creativity + accuracy
-  reasoning_effort: 'medium', // Needs to think about semantic connections
-  verbosity: 'low', // Concise trend explanations
-  max_tokens: 1500, // 1-2 trends or dad joke = moderate output
-  timeout_ms: 45000 // 45 seconds max
+  temperature: 0.6,           // Balanced for trend matching
+  reasoning_effort: 'medium', // Semantic matching requires thinking
+  verbosity: 'low',           // Concise trend connections
+  max_tokens: 3500,           // Moderate complexity
+  timeout_ms: 45000           // 45 second timeout
 };
