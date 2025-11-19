@@ -1,18 +1,27 @@
 // ============================================================================
 // AGENT: HOOK - Types & Schema
-// 3 Title Options with Personality Styles
+// 3 personality-driven title options with search potential indicators
+// ============================================================================
+
+// ============================================================================
+// TypeScript Interface (for type safety in code)
 // ============================================================================
 
 export interface TitleOption {
-  title: string; // Max 60 characters
+  title: string;
   style: 'Authority' | 'Conversational' | 'Curiosity-Driven';
   primary_keyword: string;
   search_potential: '🟢 High' | '🟡 Typical' | '🔵 Cool';
 }
 
 export interface HookOutput {
-  title_options: TitleOption[]; // Exactly 3
+  title_options: TitleOption[]; // Exactly 3 options
 }
+
+// ============================================================================
+// JSON Schema (for OpenAI Structured Outputs)
+// CRITICAL: unwrap properties at top level (name, schema, strict)
+// ============================================================================
 
 export const HOOK_SCHEMA = {
   name: 'hook_output',
@@ -27,7 +36,8 @@ export const HOOK_SCHEMA = {
           properties: {
             title: {
               type: 'string',
-              description: 'Episode title under 60 characters (strict limit)'
+              description: 'Episode title under 60 characters',
+              maxLength: 60
             },
             style: {
               type: 'string',
@@ -36,23 +46,23 @@ export const HOOK_SCHEMA = {
             },
             primary_keyword: {
               type: 'string',
-              description: 'Main keyword included in title'
+              description: 'Main SEO keyword in the title'
             },
             search_potential: {
               type: 'string',
               enum: ['🟢 High', '🟡 Typical', '🔵 Cool'],
-              description: 'Search demand for this approach'
+              description: 'Estimated search demand level'
             }
           },
           required: ['title', 'style', 'primary_keyword', 'search_potential'],
           additionalProperties: false
         },
-        description: 'Exactly 3 title options (one per style)',
         minItems: 3,
-        maxItems: 3
+        maxItems: 3,
+        description: 'Exactly 3 title options (one per style)'
       }
     },
     required: ['title_options'],
     additionalProperties: false
   }
-};
+} as const;
