@@ -1,0 +1,150 @@
+{
+  "episode_id": "episode-1763524535978",
+  "transcript_length": 62450,
+  "processing_time": 235480,
+  "timestamp": "2025-11-19T03:59:31.460Z",
+  "agents": {
+    "insight": {
+      "episode_summary": "Meg and Keri trade listener-submitted holiday recipes and the family stories behind them—from no-bake Nanaimo bars and butter tarts to glumpki cabbage rolls and We Little Meatballs—spotlighting no-bake Nanaimo bars, Swedish meatballs with allspice, and pumpkin gingerbread with caramel sauce. They also share cookie-tray standouts (almond paste cookies, potato chip cookies), cozy breakfast traditions (candy cane pancakes, quiche, Wife Saver), and a free digital holiday cookbook you can download via their Redesigning Health and Home socials.",
+      "key_discovery_phrases": [
+        "no-bake Nanaimo bars",
+        "Swedish meatballs with allspice",
+        "pumpkin gingerbread with caramel sauce"
+      ],
+      "keywords": [
+        {
+          "keyword": "listener-submitted holiday recipes",
+          "category": "Main Topic",
+          "search_potential": "🟡 Typical",
+          "semantic_note": null
+        },
+        {
+          "keyword": "digital holiday cookbook",
+          "category": "Main Topic",
+          "search_potential": "🟡 Typical",
+          "semantic_note": null
+        },
+        {
+          "keyword": "what are Nanaimo bars",
+          "category": "SEO Search",
+          "search_potential": "🟢 High",
+          "semantic_note": null
+        },
+        {
+          "keyword": "butter tarts without raisins",
+          "category": "SEO Search",
+          "search_potential": "🟡 Typical",
+          "semantic_note": null
+        },
+        {
+          "keyword": "dainty tray",
+          "category": "Community Language",
+          "search_potential": "🔵 Cool",
+          "semantic_note": "Canadian term; U.S. audiences often search for 'cookie platter' or 'dessert tray'"
+        }
+      ]
+    },
+    "hook": {
+      "title_options": [
+        {
+          "title": "Proven Holiday Recipes + Free Cookbook",
+          "style": "Authority",
+          "primary_keyword": "holiday recipes",
+          "search_potential": "🟢 High"
+        },
+        {
+          "title": "Need Easy Christmas Recipes? Try These Family Faves",
+          "style": "Conversational",
+          "primary_keyword": "christmas recipes",
+          "search_potential": "🟢 High"
+        },
+        {
+          "title": "Holiday Recipes You've Never Heard Of (But Should)",
+          "style": "Curiosity-Driven",
+          "primary_keyword": "holiday recipes",
+          "search_potential": "🟢 High"
+        }
+      ]
+    },
+    "spotlight": {
+      "shareable_quotes": [
+        {
+          "quote": "“My dad loved it. Now that he’s gone, I remember the way he reacted with the first taste. It makes me feel close to him when he’s no longer at our table.”",
+          "timestamp": "00:23:22",
+          "hashtags": [
+            "#Holidays",
+            "#FoodMemories"
+          ],
+          "platform_notes": "Use cozy kitchen B-roll of whisking/baking, then cut to a still photo of Dad if available. Add soft piano bed, warm film grain. Big serif caption text on-screen. Best for Reels, TikTok, YouTube Shorts; repurpose on LinkedIn with a reflective caption."
+        },
+        {
+          "quote": "“Mom toasted white bread two slices at a time, and we’d race to the toaster, rip it into chunks, and fill a huge bowl for her stuffing—the night-before-Thanksgiving ritual we still love.”",
+          "timestamp": "00:13:02",
+          "hashtags": [
+            "#Thanksgiving",
+            "#FamilyTraditions"
+          ],
+          "platform_notes": "Open with toaster ‘pop’ SFX, quick cuts of hands ripping toast, and a vintage photo overlay. Add on-screen step labels (Toast. Rip. Bowl.). Great for Reels and TikTok; try a side-by-side of old photos vs. today on YouTube Shorts."
+        },
+        {
+          "quote": "“Every year since they were little, Gib makes candy cane pancakes for Christmas Eve breakfast—Ziploc baggies of candy canes for the kids to smash. Think Elf: syrup and candy canes.”",
+          "timestamp": "00:45:34",
+          "hashtags": [
+            "#Christmas",
+            "#CandyCanePancakes"
+          ],
+          "platform_notes": "POV shot: kids smashing candy canes (ASMR crunch), overhead pancake pour, festive jingle. Use bold playful text overlays. Works on Reels, TikTok, Shorts; add recipe steps in the description for YouTube Shorts."
+        }
+      ],
+      "ready_to_post_caption": "The bite that brings him back. “My dad loved it... It makes me feel close to him when he’s no longer at our table.” What holiday dish keeps someone you love in the room? Share below. 🎧 Listen to the full episode — link in bio"
+    },
+    "amplify": {
+      "podcast_match": {
+        "podcast_name": "Didn't I Just Feed You",
+        "host_name": "Meghan Splawn and Stacie Billis",
+        "contact_info": "https://www.didntijustfeedyou.com/",
+        "why_collaborate": "Both shows speak to busy families who want practical, joyful food traditions—especially around the holidays. This episode’s listener-sourced recipes (crockpot meatballs, pumpkin gingerbread with caramel, pierogi bakes) align with DIJFY’s focus on doable, delicious, family-friendly meals and seasonal cooking tips.",
+        "suggested_approach": "Email via their website contact page or DM on Instagram. First message: “Hi Meghan & Stacie—I'm Meg, co-host of Redesigning Health & Home. We just released a listener-powered Holiday Recipes episode and a free digital cookbook (think cranberry cocktail meatballs, Swedish meatballs, pumpkin gingerbread w/ warm caramel, pierogi bake, etc.). Your show is our go-to for real‑life family cooking. Would you be open to a quick cross‑promo? We can do a 30–45s promo swap in December and/or a ‘holiday party bites’ recipe swap mini-episode where we each bring 2 no‑fuss appetizers. Happy to send the PDF cookbook and a short promo script/audio.” Offer to send your media kit stats and flexible dates."
+      },
+      "communities": [
+        {
+          "name": "r/Old_Recipes",
+          "platform": "Reddit",
+          "url": "https://www.reddit.com/r/Old_Recipes/",
+          "member_size": "1.5M+ members",
+          "why_this_fits": "This community loves multi‑generation family dishes and the stories behind them—exactly like your episode’s Bubby’s plum dumplings, cabbage rolls, and Christmas tree bread traditions.",
+          "engagement_tip": "Share one recipe with its family story (e.g., “My Bubby’s plum dumplings we pan‑fry in butter on Christmas”). Include full ingredients and steps in the post (no link-only posts). Add a photo. If you want to share your digital cookbook, place the link in a follow‑up comment after you’ve given the full recipe."
+        },
+        {
+          "name": "r/slowcooking",
+          "platform": "Reddit",
+          "url": "https://www.reddit.com/r/slowcooking/",
+          "member_size": "3M+ members",
+          "why_this_fits": "Crockpot dishes are a theme in this episode (cocktail meatballs, chicken & rice). This subreddit is dedicated to slow cooker recipes and tips year‑round, with a big spike around holidays.",
+          "engagement_tip": "Post one slow cooker recipe from the episode (e.g., “Cranberry cocktail meatballs [OC] – our New Year’s Eve staple”). Provide exact quantities, time, and ‘keep‑warm’ notes. Add one helpful substitution (grape jelly vs. cranberry) to invite discussion, and ask for readers’ favorite holiday slow‑cooker apps."
+        },
+        {
+          "name": "r/Baking",
+          "platform": "Reddit",
+          "url": "https://www.reddit.com/r/Baking/",
+          "member_size": "3M+ members",
+          "why_this_fits": "You featured multiple baked sweets and breads (almond paste cookies, pumpkin gingerbread with caramel sauce, Christmas breads). r/Baking is where home bakers share holiday bakes and get feedback.",
+          "engagement_tip": "Share a finished bake photo and the full recipe (e.g., “Almond paste cookies my family fights over every Christmas”). Mention any tips (resting the dough, bake time changes for larger cookies). Ask one specific question like, “Any tweaks to keep centers extra chewy?” to spark replies."
+        }
+      ]
+    },
+    "pulse": null
+  },
+  "errors": [
+    {
+      "agent": "pulse",
+      "error": "Unterminated string in JSON at position 1149 (line 1 column 1150)",
+      "timestamp": "2025-11-19T03:59:31.459Z"
+    }
+  ],
+  "summary": {
+    "agents_succeeded": 4,
+    "agents_failed": 1,
+    "total_agents": 5
+  }
+}
