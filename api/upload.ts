@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { put } from '@vercel/blob';
 
+// CRITICAL: Disable Vercel's body parsing for large files
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
@@ -19,19 +26,21 @@ export default async function handler(
   }
 
   try {
-    // Vercel automatically parses multipart/form-data for us
-    // File is available as a Buffer in req.body
+    console.log('📤 Starting upload...');
+    
     const contentType = req.headers['content-type'] || '';
     
     if (!contentType.includes('audio')) {
-      return res.status(400).json({ error: 'File must be audio' });
+      return res.status(400).json({ error: 'Content-Type must be audio/*' });
     }
 
     const timestamp = Date.now();
     const filename = `podcast-${timestamp}.mp3`;
 
-    // Upload to Vercel Blob
-    const blob = await put(filename, req.body as Buffer, {
+    console.log(`📝 Uploading ${filename} to Vercel Blob...`);
+
+    // Stream the request directly to Blob (no memory buffer!)
+    const blob = await put(filename, req, {
       access: 'public',
       contentType: 'audio/mpeg',
     });
