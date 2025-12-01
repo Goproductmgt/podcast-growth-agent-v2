@@ -2,6 +2,12 @@ import ffmpeg from 'fluent-ffmpeg';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Point fluent-ffmpeg to the static binary
+const ffmpegPath = require('ffmpeg-static');
+if (ffmpegPath) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+}
+
 interface ChunkResult {
   chunkPath: string;
   index: number;
@@ -29,46 +35,57 @@ export async function chunkAudioFile(
   const duration = await getAudioDuration(inputPath);
   const totalChunks = Math.ceil(duration / chunkDurationSeconds);
   
-  console.log(`Audio duration: ${duration}s, splitting into ${totalChunks} chunks`);
+  console.log(`📊 Audio duration: ${Math.round(duration)}s (~${Math.round(duration / 60)} minutes)`);
+  console.log(`✂️  Splitting into ${totalChunks} chunks of ${chunkDurationMinutes} minutes each\n`);
   
   const chunks: ChunkResult[] = [];
   
-  // Create chunks
+  // Create each chunk
   for (let i = 0; i < totalChunks; i++) {
     const startTime = i * chunkDurationSeconds;
-    const outputPath = path.join(outputDir, `chunk_${i.toString().padStart(3, '0')}.mp3`);
+    const chunkPath = path.join(outputDir, `chunk_${String(i).padStart(3, '0')}.mp3`);
     
-    await createChunk(inputPath, outputPath, startTime, chunkDurationSeconds);
+    await createChunk(inputPath, chunkPath, startTime, chunkDurationSeconds);
+    
+    // Calculate actual duration of this chunk (last chunk might be shorter)
+    const chunkDuration = Math.min(chunkDurationSeconds, duration - startTime);
     
     chunks.push({
-      chunkPath: outputPath,
+      chunkPath,
       index: i,
-      duration: Math.min(chunkDurationSeconds, duration - startTime)
+      duration: chunkDuration
     });
     
-    console.log(`Created chunk ${i + 1}/${totalChunks}: ${outputPath}`);
+    console.log(`✅ Created chunk ${i + 1}/${totalChunks}: ${path.basename(chunkPath)}`);
   }
   
   return chunks;
 }
 
 /**
- * Gets the duration of an audio file in seconds
+ * Get the duration of an audio file in seconds
  */
 function getAudioDuration(filePath: string): Promise<number> {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (err) {
-        reject(err);
-      } else {
-        resolve(metadata.format.duration || 0);
+        reject(new Error(`Failed to probe audio file: ${err.message}`));
+        return;
       }
+      
+      const duration = metadata.format.duration;
+      if (!duration) {
+        reject(new Error('Could not determine audio duration'));
+        return;
+      }
+      
+      resolve(duration);
     });
   });
 }
 
 /**
- * Creates a single audio chunk
+ * Create a single audio chunk
  */
 function createChunk(
   inputPath: string,
@@ -81,8 +98,10 @@ function createChunk(
       .setStartTime(startTime)
       .setDuration(duration)
       .output(outputPath)
+      .audioCodec('libmp3lame')  // Use MP3 codec
+      .audioBitrate('128k')       // Set bitrate
       .on('end', () => resolve())
-      .on('error', (err) => reject(err))
+      .on('error', (err) => reject(new Error(`Failed to create chunk: ${err.message}`)))
       .run();
   });
 }
