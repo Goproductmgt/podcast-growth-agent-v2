@@ -4,7 +4,7 @@ import path from 'path';
 
 // Initialize Groq client
 const groq = new Groq({
-  apiKey: process.env.GROQ,
+  apiKey: process.env.Groq,
 });
 
 // TypeScript interfaces for type safety
