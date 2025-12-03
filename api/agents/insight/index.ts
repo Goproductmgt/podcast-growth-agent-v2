@@ -11,7 +11,7 @@ import { INSIGHT_PROMPT } from './prompt';
 import { INSIGHT_SCHEMA, InsightOutput } from './types';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OpenAI
 });
 
 // Type definition for message output item

@@ -11,7 +11,7 @@ import { HOOK_PROMPT } from './prompt';
 import { HOOK_SCHEMA, HookOutput } from './types';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OpenAI
 });
 
 // Type definition for message output item

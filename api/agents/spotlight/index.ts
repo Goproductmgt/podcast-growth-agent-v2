@@ -11,7 +11,7 @@ import { SPOTLIGHT_PROMPT } from './prompt';
 import { SPOTLIGHT_SCHEMA, SpotlightOutput } from './types';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OpenAI
 });
 
 // Type definition for message output item
