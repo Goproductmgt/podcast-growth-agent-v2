@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { handleUpload } from '@vercel/blob/client';
 
 export default async function handler(
   req: VercelRequest,
@@ -21,26 +20,24 @@ export default async function handler(
   try {
     const timestamp = Date.now();
     const filename = `podcast-${timestamp}.mp3`;
+    const token = process.env.PGA2_READ_WRITE_TOKEN;
 
-    console.log(`🔑 Generating upload URL for: ${filename}`);
+    if (!token) {
+      throw new Error('PGA2_READ_WRITE_TOKEN not configured');
+    }
 
-    // This returns instructions for the client to upload directly to Blob
-    const jsonResponse = await handleUpload({
-      request: req,
-      onBeforeGenerateToken: async (pathname) => {
-        return {
-          allowedContentTypes: ['audio/mpeg', 'audio/mp3'],
-          tokenPayload: JSON.stringify({
-            uploadedAt: new Date().toISOString(),
-          }),
-        };
-      },
-      onUploadCompleted: async ({ blob }) => {
-        console.log('✅ Upload completed:', blob.url);
-      },
+    console.log(`🔑 Generating client upload token for: ${filename}`);
+
+    // Generate client upload token
+    const uploadUrl = `https://blob.vercel-storage.com/${filename}`;
+    
+    // Return the URL and token for client-side upload
+    return res.status(200).json({
+      url: uploadUrl,
+      token: token,
+      filename: filename,
+      uploadedAt: new Date().toISOString(),
     });
-
-    return res.status(200).json(jsonResponse);
 
   } catch (error) {
     console.error('❌ Error generating upload URL:', error);
