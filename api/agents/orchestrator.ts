@@ -10,7 +10,7 @@ import { runPulseAgent } from './pulse';
  * Uses Promise.allSettled for graceful degradation
  * Returns complete GrowthPlan even if some agents fail
  */
-export async function runAllAgents(
+export async function generateGrowthPlan(
   transcript: string,
   episodeId: string = 'episode-' + Date.now()
 ): Promise<GrowthPlan> {
