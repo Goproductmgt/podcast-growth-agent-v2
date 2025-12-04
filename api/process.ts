@@ -58,7 +58,8 @@ export default async function handler(
     // Step 3: Transcribe all chunks in parallel
     console.log('🎙️  Transcribing (parallel via Groq)...');
     const transcribeStart = Date.now();
-    const transcript = await transcribeAudioChunks(chunksDir);
+    const result = await transcribeAudioChunks(chunksDir);
+    const transcript = result.fullText;
     const transcribeTime = Date.now() - transcribeStart;
     console.log(`✅ Transcription complete in ${(transcribeTime / 1000).toFixed(1)}s`);
     console.log(`📝 Transcript length: ${transcript.length} characters`);
