@@ -2,10 +2,15 @@ import ffmpeg from 'fluent-ffmpeg';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-// Point fluent-ffmpeg to the static binary
+// Point fluent-ffmpeg to the static binaries
 const ffmpegPath = require('ffmpeg-static');
 if (ffmpegPath) {
   ffmpeg.setFfmpegPath(ffmpegPath);
+}
+
+const ffprobePath = require('ffprobe-static').path;
+if (ffprobePath) {
+  ffmpeg.setFfprobePath(ffprobePath);
 }
 
 interface ChunkResult {
@@ -23,7 +28,7 @@ interface ChunkResult {
 export async function chunkAudioFile(
   inputPath: string,
   chunkDurationMinutes: number = 10
-): Promise<ChunkResult[]> {
+): Promise<string> {
   
   const chunkDurationSeconds = chunkDurationMinutes * 60;
   const outputDir = path.join(path.dirname(inputPath), 'chunks');
@@ -59,7 +64,8 @@ export async function chunkAudioFile(
     console.log(`✅ Created chunk ${i + 1}/${totalChunks}: ${path.basename(chunkPath)}`);
   }
   
-  return chunks;
+  // Return the output directory path
+  return outputDir;
 }
 
 /**
