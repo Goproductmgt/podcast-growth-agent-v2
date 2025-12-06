@@ -62,4 +62,41 @@ export interface AgentResult {
     input: number;
     output: number;
   };
+}// ============================================================================
+// URL RESOLVER TYPES (Added Session 10)
+// ============================================================================
+
+export interface EpisodeMetadata {
+  // Core identifiers
+  episodeUrl: string;        // Link to episode (for posting)
+  episodeTitle: string;
+  podcastTitle: string;
+  
+  // Publishing info
+  publishDate: string;       // ISO format
+  
+  // Audio
+  audioUrl: string;          // Direct MP3 URL
+  audioDuration?: number;    // Duration in seconds
+  
+  // Social handles (if available)
+  podcastSocial?: {
+    twitter?: string;
+    instagram?: string;
+    facebook?: string;
+    website?: string;
+  }
+}
+
+export interface ParsedPodcastURL {
+  platform: 'apple' | 'spotify';
+  episodeId?: string;        // Optional - might only have podcast ID
+  podcastId: string;
+  originalUrl: string;
+}
+
+export interface ResolveSourceResponse {
+  success: boolean;
+  metadata?: EpisodeMetadata;
+  error?: string;
 }
