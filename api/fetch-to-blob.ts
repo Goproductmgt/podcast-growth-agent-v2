@@ -32,6 +32,17 @@ export default async function handler(
     return;
   }
 
+  // Validate token exists (early fail-fast)
+  const token = process.env.PGA2_READ_WRITE_TOKEN;
+  if (!token) {
+    console.error('❌ PGA2_READ_WRITE_TOKEN not configured');
+    res.status(500).json({
+      success: false,
+      error: 'Blob storage not configured'
+    });
+    return;
+  }
+
   const { audioUrl, filename } = req.body;
 
   if (!audioUrl || typeof audioUrl !== 'string') {
@@ -44,15 +55,15 @@ export default async function handler(
 
   const blobFilename = filename || `podcast-${Date.now()}.mp3`;
 
-  console.log('Fetching audio from URL:', audioUrl);
-  console.log('Target blob filename:', blobFilename);
+  console.log('🎵 Fetching audio from URL:', audioUrl);
+  console.log('📁 Target blob filename:', blobFilename);
 
   try {
     // Step 1: Fetch the audio file
     const audioResponse = await fetch(audioUrl);
     
     if (!audioResponse.ok) {
-      console.error('Failed to fetch audio:', audioResponse.status, audioResponse.statusText);
+      console.error('❌ Failed to fetch audio:', audioResponse.status, audioResponse.statusText);
       res.status(502).json({
         success: false,
         error: `Failed to fetch audio from source: ${audioResponse.statusText}`
@@ -62,15 +73,16 @@ export default async function handler(
 
     // Check if we got a valid audio response
     const contentType = audioResponse.headers.get('content-type');
-    console.log('Audio content type:', contentType);
+    console.log('🎧 Audio content type:', contentType);
 
     // Get the audio as a buffer (for Vercel Blob)
     const audioBuffer = await audioResponse.arrayBuffer();
     const audioSize = audioBuffer.byteLength;
     
-    console.log('Downloaded audio size:', audioSize, 'bytes (~' + Math.round(audioSize / 1024 / 1024) + 'MB)');
+    console.log('📦 Downloaded audio size:', audioSize, 'bytes (~' + Math.round(audioSize / 1024 / 1024) + 'MB)');
 
     if (audioSize === 0) {
+      console.error('❌ Downloaded audio file is empty');
       res.status(502).json({
         success: false,
         error: 'Downloaded audio file is empty'
@@ -79,14 +91,15 @@ export default async function handler(
     }
 
     // Step 2: Upload to Vercel Blob
-    console.log('Uploading to Vercel Blob...');
+    console.log('☁️  Uploading to Vercel Blob...');
     
     const blob = await put(blobFilename, audioBuffer, {
       access: 'public',
-      contentType: contentType || 'audio/mpeg'
+      contentType: contentType || 'audio/mpeg',
+      token: token  // ← CRITICAL: Pass the token explicitly
     });
 
-    console.log('Successfully uploaded to blob:', blob.url);
+    console.log('✅ Successfully uploaded to blob:', blob.url);
 
     const response: FetchToBlobResponse = {
       success: true,
@@ -97,7 +110,7 @@ export default async function handler(
     res.status(200).json(response);
 
   } catch (error) {
-    console.error('Error in fetch-to-blob:', error);
+    console.error('❌ Error in fetch-to-blob:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
