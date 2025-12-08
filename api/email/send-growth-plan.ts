@@ -6,7 +6,29 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // Only allow POST requests
+  // CORS headers - allow requests from Replit frontend
+  const allowedOrigins = [
+    'https://podcast-growth-agent-goproductmgt.replit.app',
+    'https://www.podcastgrowthagent.com',
+    'http://localhost:3000', // for local testing
+  ];
+
+  const origin = req.headers.origin as string;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Only allow POST requests for actual email sending
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
