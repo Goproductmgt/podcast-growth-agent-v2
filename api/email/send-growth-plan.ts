@@ -35,7 +35,7 @@ export default async function handler(
   }
 
   try {
-    const { senderEmail, recipientEmail, episodeData } = req.body;
+    const { senderEmail, recipientEmail, episodeData, reportUrl } = req.body; // NEW: Added reportUrl
 
     // Validate inputs
     if (!senderEmail || !recipientEmail || !episodeData) {
@@ -51,16 +51,39 @@ export default async function handler(
       key: process.env.MAILGUN_API_KEY || '',
     });
 
+    // NEW: Build report button HTML if reportUrl is provided
+    const reportButtonHTML = reportUrl ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${reportUrl}" 
+           style="display: inline-block; 
+                  background: #4CAF50; 
+                  color: white; 
+                  padding: 15px 30px; 
+                  text-decoration: none; 
+                  border-radius: 5px; 
+                  font-weight: bold;
+                  font-size: 16px;">
+          📊 View Full Growth Plan
+        </a>
+        <p style="color: #666; font-size: 14px; margin-top: 10px;">
+          Click to see all 5 AI-generated growth strategies
+        </p>
+      </div>
+    ` : '';
+
     // Email content
     const emailHTML = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Your Podcast Growth Report</h2>
         <p>Hi there,</p>
         <p><strong>${senderEmail}</strong> thought you'd find this helpful - a complete growth plan for your podcast episode.</p>
+        
+        ${reportButtonHTML}
+        
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         <div style="background: #f5f5f5; padding: 20px; border-radius: 8px;">
           <h3>Episode Summary</h3>
-          <p>${episodeData.summary || 'Episode analysis included in attached report.'}</p>
+          <p>${episodeData.summary || 'Episode analysis included in the full report.'}</p>
         </div>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         <p style="color: #666; font-size: 12px;">
@@ -80,6 +103,9 @@ export default async function handler(
     });
 
     console.log('Email sent:', result);
+    if (reportUrl) {
+      console.log('Report URL included:', reportUrl);
+    }
 
     return res.status(200).json({ 
       success: true, 
