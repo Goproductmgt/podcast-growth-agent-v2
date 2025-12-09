@@ -16,6 +16,9 @@ interface ProcessUrlResponse {
   success: boolean;
   growth_plan?: any;
   metadata?: any;
+  reportId?: string;        // NEW: Report ID for reference
+  reportUrl?: string;       // NEW: Shareable URL
+  reportBlobUrl?: string;   // NEW: Direct blob URL
   error?: string;
   timing?: {
     resolve_time: number;
@@ -49,6 +52,9 @@ interface FetchToBlobResponse {
 interface ProcessResponse {
   success: boolean;
   growth_plan?: any;
+  reportId?: string;        // NEW: From process.ts
+  reportUrl?: string;       // NEW: From process.ts
+  reportBlobUrl?: string;   // NEW: From process.ts
   error?: string;
 }
 
@@ -183,14 +189,23 @@ export default async function handler(
 
     console.log(`✅ Processing complete in ${processTime}ms`);
     console.log(`🎉 Total pipeline time: ${totalTime}ms (${Math.round(totalTime / 1000)}s)`);
+    
+    // NEW: Log report information
+    if (processData.reportId) {
+      console.log(`📋 Report ID: ${processData.reportId}`);
+      console.log(`🔗 Report URL: ${processData.reportUrl}`);
+    }
 
     // ========================================================================
-    // RETURN COMPLETE RESULT
+    // RETURN COMPLETE RESULT (INCLUDING REPORT INFO)
     // ========================================================================
     const response: ProcessUrlResponse = {
       success: true,
       growth_plan: processData.growth_plan,
       metadata: resolveData.metadata,
+      reportId: processData.reportId,           // NEW: Pass through from process.ts
+      reportUrl: processData.reportUrl,         // NEW: Pass through from process.ts
+      reportBlobUrl: processData.reportBlobUrl, // NEW: Pass through from process.ts
       timing: {
         resolve_time: resolveTime,
         fetch_time: fetchTime,
