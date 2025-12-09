@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { get } from 'https';
+import { put } from '@vercel/blob'; // NEW: Import Vercel Blob put function
 import { chunkAudioFile } from './chunking/audioChunker';
 import { transcribeAudioChunks } from './transcribe/groqTranscriber';
 import { generateGrowthPlan } from './agents/orchestrator';
@@ -73,14 +74,51 @@ export default async function handler(
 
     const totalTime = Date.now() - startTime;
 
+    // ========================================================================
+    // NEW: STEP 5 - STORE REPORT IN BLOB STORAGE
+    // ========================================================================
+    console.log('💾 Storing report for sharing...');
+    
+    // Generate unique report ID
+    const reportId = `rprt_${timestamp}_${Math.random().toString(36).substring(2, 11)}`;
+    
+    // Create report data object with all information
+    const reportData = {
+      id: reportId,
+      createdAt: new Date().toISOString(),
+      episodeId: growthPlan.episode_id || `episode-${timestamp}`,
+      transcriptLength: transcript.length,
+      processingTime: totalTime,
+      growthPlan: growthPlan, // Full orchestrator output
+    };
+
+    // Store in Vercel Blob at /reports/[reportId].json
+    const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
+      access: 'public',
+      token: process.env.PGA2_READ_WRITE_TOKEN,
+      contentType: 'application/json',
+    });
+
+    console.log(`✅ Report stored: ${reportId}`);
+    console.log(`🔗 Blob URL: ${blob.url}`);
+    
+    // Generate shareable report URL for frontend
+    const reportUrl = `https://podcastgrowthagent.com/report/${reportId}`;
+    console.log(`🌐 Shareable URL: ${reportUrl}`);
+    // ========================================================================
+
     console.log('🎉 PIPELINE COMPLETE');
     console.log(`⏱️  Total time: ${(totalTime / 1000).toFixed(1)}s`);
     console.log(`   - Transcription: ${(transcribeTime / 1000).toFixed(1)}s`);
     console.log(`   - Agents: ${(agentsTime / 1000).toFixed(1)}s`);
 
+    // NEW: Return response with report info
     return res.status(200).json({
       success: true,
       growth_plan: growthPlan,
+      reportId: reportId,           // NEW: Report ID for reference
+      reportUrl: reportUrl,          // NEW: Shareable URL
+      reportBlobUrl: blob.url,       // NEW: Direct blob URL
       metrics: {
         total_time: `${(totalTime / 1000).toFixed(1)}s`,
         transcription_time: `${(transcribeTime / 1000).toFixed(1)}s`,
