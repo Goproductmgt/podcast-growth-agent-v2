@@ -10,6 +10,7 @@ export default async function handler(
   const allowedOrigins = [
     'https://podcast-growth-agent-goproductmgt.replit.app',
     'https://www.podcastgrowthagent.com',
+    'https://podcastgrowthagent.com',
     'http://localhost:3000', // for local testing
   ];
 
