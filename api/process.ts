@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { get } from 'https';
-import { put } from '@vercel/blob'; // NEW: Import Vercel Blob put function
+import { put } from '@vercel/blob';
 import { chunkAudioFile } from './chunking/audioChunker';
 import { transcribeAudioChunks } from './transcribe/groqTranscriber';
 import { generateGrowthPlan } from './agents/orchestrator';
@@ -75,7 +75,7 @@ export default async function handler(
     const totalTime = Date.now() - startTime;
 
     // ========================================================================
-    // NEW: STEP 5 - STORE REPORT IN BLOB STORAGE
+    // STEP 5 - STORE REPORT IN BLOB STORAGE
     // ========================================================================
     console.log('💾 Storing report for sharing...');
     
@@ -89,7 +89,8 @@ export default async function handler(
       episodeId: growthPlan.episode_id || `episode-${timestamp}`,
       transcriptLength: transcript.length,
       processingTime: totalTime,
-      growthPlan: growthPlan, // Full orchestrator output
+      transcript: transcript,  // NEW: Store full transcript for agent re-runs
+      growthPlan: growthPlan,
     };
 
     // Store in Vercel Blob at /reports/[reportId].json
@@ -112,13 +113,13 @@ export default async function handler(
     console.log(`   - Transcription: ${(transcribeTime / 1000).toFixed(1)}s`);
     console.log(`   - Agents: ${(agentsTime / 1000).toFixed(1)}s`);
 
-    // NEW: Return response with report info
+    // Return response with report info
     return res.status(200).json({
       success: true,
       growth_plan: growthPlan,
-      reportId: reportId,           // NEW: Report ID for reference
-      reportUrl: reportUrl,          // NEW: Shareable URL
-      reportBlobUrl: blob.url,       // NEW: Direct blob URL
+      reportId: reportId,
+      reportUrl: reportUrl,
+      reportBlobUrl: blob.url,
       metrics: {
         total_time: `${(totalTime / 1000).toFixed(1)}s`,
         transcription_time: `${(transcribeTime / 1000).toFixed(1)}s`,
