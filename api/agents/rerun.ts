@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { put } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
 import { runInsightAgent } from './insight';
 import { runHookAgent } from './hook';
 import { runSpotlightAgent } from './spotlight';
@@ -7,7 +7,7 @@ import { runAmplifyAgent } from './amplify';
 import { runPulseAgent } from './pulse';
 
 export const config = {
-  maxDuration: 60, // Individual agents should complete within 60 seconds
+  maxDuration: 300, // Increased to 120s - Amplify can take up to 115s
 };
 
 interface RerunRequest {
@@ -186,6 +186,18 @@ export default async function handler(
     // ========================================================================
     console.log('💾 Saving updated report...');
     
+    // Delete old version first to allow overwrite
+    try {
+      await del(blobUrl, {
+        token: process.env.PGA2_READ_WRITE_TOKEN,
+      });
+      console.log('🗑️  Old report deleted');
+    } catch (delError) {
+      console.log('⚠️  Could not delete old report (may not exist):', delError);
+      // Continue anyway - might be first save
+    }
+    
+    // Put new version
     const blob = await put(
       `reports/${reportId}.json`,
       JSON.stringify(report),
