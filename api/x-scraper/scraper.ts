@@ -1,5 +1,5 @@
-import { chromium, Browser, Page } from 'playwright';
-import type { Tweet, ScraperConfig, ScraperResult } from './types';
+import { chromium, Browser, Page } from 'playwright-core';
+import chromiumPkg from '@sparticuz/chromium';
 
 /**
  * Scrapes X (Twitter) search results for podcast-related tweets
@@ -20,9 +20,11 @@ export async function scrapeXSearch(config: ScraperConfig): Promise<ScraperResul
   try {
     console.log(`[Scraper] Starting scrape for query: "${query}"`);
     
-    // Launch browser
+    // Launch browser with Vercel-compatible Chromium
     browser = await chromium.launch({
-      headless: true, // Run without visible browser window
+      args: chromiumPkg.args,
+      executablePath: await chromiumPkg.executablePath(),
+      headless: true,
     });
     
     const context = await browser.newContext({
@@ -202,3 +204,6 @@ function findApplePodcastUrl(urls: string[]): string | null {
   }
   return null;
 }
+
+// Import types
+import type { Tweet, ScraperConfig, ScraperResult } from './types';
