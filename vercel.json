@@ -4,11 +4,5 @@
       "maxDuration": 300,
       "includeFiles": "node_modules/ffmpeg-static/ffmpeg"
     }
-  },
-  "crons": [
-    {
-      "path": "/api/x-scraper-run",
-      "schedule": "0 14 * * *"
-    }
-  ]
+  }
 }
