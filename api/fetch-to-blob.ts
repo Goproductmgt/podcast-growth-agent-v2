@@ -96,7 +96,8 @@ export default async function handler(
     const blob = await put(blobFilename, audioBuffer, {
       access: 'public',
       contentType: contentType || 'audio/mpeg',
-      token: token  // ← CRITICAL: Pass the token explicitly
+      token: token,  // ← CRITICAL: Pass the token explicitly
+      addRandomSuffix: true  // Make filenames unique
     });
 
     console.log('✅ Successfully uploaded to blob:', blob.url);
