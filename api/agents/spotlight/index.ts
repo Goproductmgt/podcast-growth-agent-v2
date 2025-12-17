@@ -2,7 +2,6 @@
 // AGENT: SPOTLIGHT - Runner
 // Executes the Spotlight agent with OpenAI Responses API (GPT-5)
 // ============================================================================
-
 import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
@@ -28,7 +27,10 @@ function isMessageItem(item: any): item is MessageOutputItem {
   return item && item.type === 'message' && Array.isArray(item.content);
 }
 
-export async function runSpotlightAgent(transcript: string): Promise<AgentResult> {
+export async function runSpotlightAgent(
+  transcript: string,
+  episodeUrl?: string
+): Promise<AgentResult> {
   const startTime = Date.now();
   
   try {
@@ -79,6 +81,9 @@ export async function runSpotlightAgent(transcript: string): Promise<AgentResult
 
     // Parse the JSON response
     const data: SpotlightOutput = JSON.parse(content);
+    
+    // Inject episode URL into the output (null if not provided)
+    data.episode_url = episodeUrl ?? null;
 
     return {
       agent: 'Spotlight',
@@ -91,7 +96,6 @@ export async function runSpotlightAgent(transcript: string): Promise<AgentResult
         output: response.usage?.output_tokens ?? 0
       }
     };
-
   } catch (error) {
     const processingTime = Date.now() - startTime;
     return {

@@ -2,11 +2,9 @@
 // AGENT: SPOTLIGHT - Types & Schema
 // Shareable quotes optimized for video/reels + ready-to-post caption
 // ============================================================================
-
 // ============================================================================
 // TypeScript Interface (for type safety in code)
 // ============================================================================
-
 export interface ShareableQuote {
   quote: string;
   timestamp: string; // HH:MM:SS format
@@ -17,13 +15,13 @@ export interface ShareableQuote {
 export interface SpotlightOutput {
   shareable_quotes: ShareableQuote[]; // Exactly 3 quotes
   ready_to_post_caption: string;
+  episode_url: string | null; // Apple Podcasts URL (null for MP3 uploads)
 }
 
 // ============================================================================
 // JSON Schema (for OpenAI Structured Outputs)
 // CRITICAL: unwrap properties at top level (name, schema, strict)
 // ============================================================================
-
 export const SPOTLIGHT_SCHEMA = {
   name: 'spotlight_output',
   strict: true,
@@ -70,9 +68,13 @@ export const SPOTLIGHT_SCHEMA = {
         type: 'string',
         description: 'Ready-to-post caption under 500 characters',
         maxLength: 500
+      },
+      episode_url: {
+        type: ['string', 'null'],
+        description: 'Apple Podcasts episode URL for social sharing (null for MP3 uploads)'
       }
     },
-    required: ['shareable_quotes', 'ready_to_post_caption'],
+    required: ['shareable_quotes', 'ready_to_post_caption', 'episode_url'],
     additionalProperties: false
   }
 } as const;

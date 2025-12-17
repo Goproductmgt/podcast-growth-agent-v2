@@ -12,7 +12,8 @@ import { runPulseAgent } from './pulse';
  */
 export async function generateGrowthPlan(
   transcript: string,
-  episodeId: string = 'episode-' + Date.now()
+  episodeId: string = 'episode-' + Date.now(),
+  episodeUrl?: string
 ): Promise<GrowthPlan> {
   
   console.log('🚀 Starting Growth Plan generation...');
@@ -25,7 +26,7 @@ export async function generateGrowthPlan(
   const results = await Promise.allSettled([
     runInsightAgent(transcript),
     runHookAgent(transcript),
-    runSpotlightAgent(transcript),
+    runSpotlightAgent(transcript, episodeUrl),
     runAmplifyAgent(transcript),
     runPulseAgent(transcript)
   ]);

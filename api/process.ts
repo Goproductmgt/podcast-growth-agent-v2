@@ -31,17 +31,20 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
-    const { blobUrl } = req.body;
+    const { blobUrl, episodeUrl } = req.body;
 
     if (!blobUrl) {
       return res.status(400).json({ 
         error: 'blobUrl is required',
-        usage: 'POST { "blobUrl": "https://..." }'
+        usage: 'POST { "blobUrl": "https://...", "episodeUrl": "https://..." (optional) }'
       });
     }
 
     console.log('📥 Starting processing pipeline...');
     console.log('📍 Blob URL:', blobUrl);
+    if (episodeUrl) {
+      console.log('🔗 Episode URL:', episodeUrl);
+    }
 
     // Step 1: Download MP3 from Blob to /tmp
     const timestamp = Date.now();
@@ -68,7 +71,7 @@ export default async function handler(
     // Step 4: Run all 5 AI agents in parallel
     console.log('🤖 Running 5 AI agents (Insight, Hook, Spotlight, Amplify, Pulse)...');
     const agentsStart = Date.now();
-    const growthPlan = await generateGrowthPlan(transcript);
+    const growthPlan = await generateGrowthPlan(transcript, `episode-${timestamp}`, episodeUrl);
     const agentsTime = Date.now() - agentsStart;
     console.log(`✅ Growth Plan generated in ${(agentsTime / 1000).toFixed(1)}s`);
 
@@ -104,7 +107,7 @@ export default async function handler(
     console.log(`🔗 Blob URL: ${blob.url}`);
     
     // Generate shareable report URL for frontend
-    const reportUrl = `https://podcastgrowthagent.com/report/${reportId}`;
+    const reportUrl = `https://podcastgrowthagent.com/#/report/${reportId}`;
     console.log(`🌐 Shareable URL: ${reportUrl}`);
     // ========================================================================
 

@@ -98,13 +98,14 @@ export default async function handler(
   }
 
   console.log('🎬 Starting URL processing pipeline for:', url);
+
   const startTime = Date.now();
 
   try {
     // ========================================================================
-    // STEP 1: Resolve podcast URL to audio URL
+    // STEP 1: Resolve podcast URL to audio URL + metadata
     // ========================================================================
-    console.log('📍 Step 1: Resolving source...');
+    console.log('🔍 Step 1: Resolving podcast URL...');
     const resolveStart = Date.now();
 
     const resolveResponse = await fetch(`${getBaseUrl(req)}/api/resolve-source`, {
@@ -115,7 +116,7 @@ export default async function handler(
 
     if (!resolveResponse.ok) {
       const errorData = await resolveResponse.json() as ErrorResponse;
-      console.error('❌ Source resolution failed:', errorData);
+      console.error('❌ Resolve failed:', errorData);
       res.status(resolveResponse.status).json({
         success: false,
         error: errorData.error || 'Failed to resolve podcast URL'
@@ -125,13 +126,17 @@ export default async function handler(
 
     const resolveData = await resolveResponse.json() as ResolveSourceResponse;
     const resolveTime = Date.now() - resolveStart;
-    console.log(`✅ Source resolved in ${resolveTime}ms`);
-    console.log('🎵 Episode:', resolveData.metadata?.episodeTitle);
+
+    console.log(`✅ Resolved in ${resolveTime}ms`);
+    console.log('📝 Episode:', resolveData.metadata?.episodeTitle);
+    console.log('🎙️  Podcast:', resolveData.metadata?.podcastTitle);
+    console.log('🔗 Episode URL:', resolveData.metadata?.episodeUrl);
+    console.log('🎵 Audio URL:', resolveData.metadata?.audioUrl);
 
     // ========================================================================
-    // STEP 2: Fetch audio and upload to Blob
+    // STEP 2: Download audio and upload to Blob storage
     // ========================================================================
-    console.log('📥 Step 2: Fetching audio to blob...');
+    console.log('📦 Step 2: Fetching audio to blob...');
     const fetchStart = Date.now();
 
     const fetchResponse = await fetch(`${getBaseUrl(req)}/api/fetch-to-blob`, {
@@ -139,7 +144,7 @@ export default async function handler(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         audioUrl: resolveData.metadata?.audioUrl,
-        filename: `${sanitizeFilename(resolveData.metadata?.episodeTitle || 'episode')}-${Date.now()}.mp3`
+        filename: sanitizeFilename(resolveData.metadata?.episodeTitle || 'episode')
       })
     });
 
@@ -155,6 +160,7 @@ export default async function handler(
 
     const fetchData = await fetchResponse.json() as FetchToBlobResponse;
     const fetchTime = Date.now() - fetchStart;
+
     console.log(`✅ Audio fetched in ${fetchTime}ms`);
     console.log('☁️  Blob URL:', fetchData.blobUrl);
     console.log('📦 Size:', Math.round((fetchData.size || 0) / 1024 / 1024) + 'MB');
@@ -169,7 +175,8 @@ export default async function handler(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        blobUrl: fetchData.blobUrl
+        blobUrl: fetchData.blobUrl,
+        episodeUrl: resolveData.metadata?.episodeUrl  // NEW: Pass episode URL
       })
     });
 
