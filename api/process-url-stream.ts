@@ -15,7 +15,11 @@ import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { get } from 'https';
 import { put } from '@vercel/blob';
-import { YoutubeTranscript } from 'youtube-transcript';
+// youtube-transcript is ESM-only, must use dynamic import
+async function fetchYouTubeTranscript(videoId: string) {
+  const { YoutubeTranscript } = await import('youtube-transcript');
+  return YoutubeTranscript.fetchTranscript(videoId);
+}
 import { chunkAudioFile } from './chunking/audioChunker';
 import { transcribeAudioChunks } from './transcribe/groqTranscriber';
 import { generateGrowthPlanStream } from './agents/orchestrator-stream';
@@ -118,7 +122,7 @@ export default async function handler(
 
       let transcriptItems;
       try {
-        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+        transcriptItems = await fetchYouTubeTranscript(videoId);
       } catch (err) {
         console.error('❌ YouTube transcript fetch failed:', err);
         sendEvent(res, 'error', {

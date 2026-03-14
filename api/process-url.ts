@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { YoutubeTranscript } from 'youtube-transcript';
+// youtube-transcript is ESM-only, must use dynamic import
+async function fetchYouTubeTranscript(videoId: string) {
+  const { YoutubeTranscript } = await import('youtube-transcript');
+  return YoutubeTranscript.fetchTranscript(videoId);
+}
 import { put } from '@vercel/blob';
 import { generateGrowthPlan } from './agents/orchestrator';
 
@@ -136,7 +140,7 @@ export default async function handler(
 
       let transcriptItems;
       try {
-        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+        transcriptItems = await fetchYouTubeTranscript(videoId);
       } catch (err) {
         console.error('❌ YouTube transcript fetch failed:', err);
         return res.status(400).json({
