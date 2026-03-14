@@ -7,7 +7,7 @@ import { AgentConfig } from '../shared/types';
 
 export const SPOTLIGHT_CONFIG: AgentConfig = {
   name: 'Spotlight',
-  model: 'gpt-5.4-pro',
+  model: 'gpt-5.4',
   temperature: 0.6,           // Balanced - authentic but shareable
   reasoning_effort: 'medium', // Smarter quote selection
   verbosity: 'low',           // Concise outputs

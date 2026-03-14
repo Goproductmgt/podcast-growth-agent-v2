@@ -7,9 +7,9 @@ import { AgentConfig } from '../shared/types';
 
 export const HOOK_CONFIG: AgentConfig = {
   name: 'Hook',
-  model: 'gpt-5.4-pro',
+  model: 'gpt-5.4',
   temperature: 0.8,           // Higher creativity for title variation
-  reasoning_effort: 'high',   // Better balance of catchy + SEO-smart
+  reasoning_effort: 'medium', // Balance of catchy + SEO-smart
   verbosity: 'low',           // Concise titles
   max_tokens: 4096,           // Enough for reasoning + JSON output
   timeout_ms: 90000           // 90 seconds
