@@ -1,11 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// youtube-transcript is ESM-only, must use dynamic import
-async function fetchYouTubeTranscript(videoId: string) {
-  const { YoutubeTranscript } = await import('youtube-transcript');
-  return YoutubeTranscript.fetchTranscript(videoId);
-}
 import { put } from '@vercel/blob';
 import { generateGrowthPlan } from './agents/orchestrator';
+import { fetchYouTubeTranscript } from './youtube/transcript';
 
 // ============================================================================
 // PROCESS URL - Complete pipeline from podcast URL to Growth Plan

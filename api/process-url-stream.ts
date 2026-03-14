@@ -15,11 +15,7 @@ import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { get } from 'https';
 import { put } from '@vercel/blob';
-// youtube-transcript is ESM-only, must use dynamic import
-async function fetchYouTubeTranscript(videoId: string) {
-  const { YoutubeTranscript } = await import('youtube-transcript');
-  return YoutubeTranscript.fetchTranscript(videoId);
-}
+import { fetchYouTubeTranscript } from './youtube/transcript';
 import { chunkAudioFile } from './chunking/audioChunker';
 import { transcribeAudioChunks } from './transcribe/groqTranscriber';
 import { generateGrowthPlanStream } from './agents/orchestrator-stream';
