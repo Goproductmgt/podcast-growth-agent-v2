@@ -11,6 +11,6 @@ export const SPOTLIGHT_CONFIG: AgentConfig = {
   temperature: 0.6,           // Balanced - authentic but shareable
   reasoning_effort: 'medium', // Smarter quote selection
   verbosity: 'low',           // Concise outputs
-  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  max_tokens: 4096,           // Enough for reasoning + JSON output
   timeout_ms: 90000           // 90 seconds
 };

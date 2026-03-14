@@ -11,6 +11,6 @@ export const INSIGHT_CONFIG: AgentConfig = {
   temperature: 0.7, // Creative but clear for summary writing
   reasoning_effort: 'high', // Deep semantic connections
   verbosity: 'medium', // Balanced explanations in semantic notes
-  max_tokens: 16384, // Uncapped - let the model finish naturally
+  max_tokens: 4096, // Enough for reasoning + JSON output
   timeout_ms: 90000 // 90 seconds
 };

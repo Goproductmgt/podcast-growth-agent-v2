@@ -11,6 +11,6 @@ export const HOOK_CONFIG: AgentConfig = {
   temperature: 0.8,           // Higher creativity for title variation
   reasoning_effort: 'high',   // Better balance of catchy + SEO-smart
   verbosity: 'low',           // Concise titles
-  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  max_tokens: 4096,           // Enough for reasoning + JSON output
   timeout_ms: 90000           // 90 seconds
 };

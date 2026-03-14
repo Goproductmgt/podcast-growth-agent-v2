@@ -11,6 +11,6 @@ export const PULSE_CONFIG: AgentConfig = {
   temperature: 0.7,           // Creative bridging for trend connections
   reasoning_effort: 'high',   // Deep semantic matching
   verbosity: 'low',           // Concise trend connections
-  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  max_tokens: 4096,           // Enough for reasoning + JSON output
   timeout_ms: 90000           // 90 seconds
 };

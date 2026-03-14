@@ -11,6 +11,6 @@ export const AMPLIFY_CONFIG: AgentConfig = {
   temperature: 0.5,           // Lower for research accuracy
   reasoning_effort: 'high',   // Deep reasoning for real URLs/contacts
   verbosity: 'medium',        // Thorough explanations
-  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  max_tokens: 8192,           // More room for complex URL/contact reasoning
   timeout_ms: 90000           // 90 seconds
 };
