@@ -7,7 +7,7 @@ import { AgentConfig } from '../shared/types';
 
 export const AMPLIFY_CONFIG: AgentConfig = {
   name: 'Amplify',
-  model: 'gpt-5.4-pro',
+  model: 'gpt-5.4',
   temperature: 0.5,           // Lower for research accuracy
   reasoning_effort: 'medium', // Balanced reasoning for URLs/contacts
   verbosity: 'medium',        // Thorough explanations
