@@ -40,7 +40,7 @@ export interface AgentError {
 // ============================================================================
 export interface AgentConfig {
   name: string;
-  model: string; // 'gpt-5'
+  model: string; // 'gpt-5.4-pro'
   temperature: number;
   reasoning_effort: 'minimal' | 'low' | 'medium' | 'high';
   verbosity: 'low' | 'medium' | 'high';

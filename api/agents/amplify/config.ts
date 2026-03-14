@@ -7,10 +7,10 @@ import { AgentConfig } from '../shared/types';
 
 export const AMPLIFY_CONFIG: AgentConfig = {
   name: 'Amplify',
-  model: 'gpt-5',
+  model: 'gpt-5.4-pro',
   temperature: 0.5,           // Lower for research accuracy
-  reasoning_effort: 'high',   // Most complex - finding real URLs/contacts
-  verbosity: 'medium',        // Needs thorough explanations
-  max_tokens: 8000,           // INCREASED - high reasoning needs more space
-  timeout_ms: 60000           // 60 second timeout (longer for complex task)
+  reasoning_effort: 'high',   // Deep reasoning for real URLs/contacts
+  verbosity: 'medium',        // Thorough explanations
+  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  timeout_ms: 90000           // 90 seconds
 };

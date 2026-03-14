@@ -7,10 +7,10 @@ import { AgentConfig } from '../shared/types';
 
 export const INSIGHT_CONFIG: AgentConfig = {
   name: 'Insight',
-  model: 'gpt-5',
+  model: 'gpt-5.4-pro',
   temperature: 0.7, // Creative but clear for summary writing
-  reasoning_effort: 'medium', // Needs to think about semantic connections
+  reasoning_effort: 'high', // Deep semantic connections
   verbosity: 'medium', // Balanced explanations in semantic notes
-  max_tokens: 4000, // Increased: 2000 for reasoning + 1000 for JSON output
-  timeout_ms: 45000 // 45 seconds max
+  max_tokens: 16384, // Uncapped - let the model finish naturally
+  timeout_ms: 90000 // 90 seconds
 };

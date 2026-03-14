@@ -7,10 +7,10 @@ import { AgentConfig } from '../shared/types';
 
 export const PULSE_CONFIG: AgentConfig = {
   name: 'Pulse',
-  model: 'gpt-5',
-  temperature: 0.6,           // Balanced for trend matching
-  reasoning_effort: 'medium', // Semantic matching requires thinking
+  model: 'gpt-5.4-pro',
+  temperature: 0.7,           // Creative bridging for trend connections
+  reasoning_effort: 'high',   // Deep semantic matching
   verbosity: 'low',           // Concise trend connections
-  max_tokens: 3500,           // Moderate complexity
-  timeout_ms: 45000           // 45 second timeout
+  max_tokens: 16384,          // Uncapped - let the model finish naturally
+  timeout_ms: 90000           // 90 seconds
 };
