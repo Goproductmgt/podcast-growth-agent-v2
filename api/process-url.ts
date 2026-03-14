@@ -1,15 +1,22 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { YoutubeTranscript } from 'youtube-transcript';
+import { put } from '@vercel/blob';
+import { generateGrowthPlan } from './agents/orchestrator';
 
 // ============================================================================
 // PROCESS URL - Complete pipeline from podcast URL to Growth Plan
 // ============================================================================
-// 
-// Flow:
+//
+// Flow (Apple Podcasts):
 // 1. Apple Podcasts URL → resolve-source → audio URL + metadata
 // 2. Audio URL → fetch-to-blob → blob URL
 // 3. Blob URL → process → Growth Plan
 //
-// This orchestrator chains all three services together
+// Flow (YouTube):
+// 1. YouTube URL → oEmbed (title) + youtube-transcript (captions)
+// 2. Transcript → agents directly (skips audio pipeline entirely)
+//
+// This orchestrator chains all services together
 // ============================================================================
 
 interface ProcessUrlResponse {
@@ -102,6 +109,120 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
+    // ========================================================================
+    // YOUTUBE PATH: Pull transcript directly, skip audio pipeline
+    // ========================================================================
+    if (isYouTubeUrl(url)) {
+      console.log('📺 YouTube URL detected — using transcript path');
+
+      const videoId = extractYouTubeVideoId(url);
+      if (!videoId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Could not extract video ID from YouTube URL.'
+        });
+      }
+
+      // Step 1: Get video metadata via oEmbed
+      console.log('📺 Step 1: Fetching YouTube metadata...');
+      const metadataStart = Date.now();
+      const videoMeta = await getYouTubeMetadata(videoId);
+      const metadataTime = Date.now() - metadataStart;
+      console.log(`✅ Metadata fetched in ${metadataTime}ms: "${videoMeta.title}"`);
+
+      // Step 2: Pull transcript directly from YouTube captions
+      console.log('📺 Step 2: Fetching YouTube transcript...');
+      const transcriptStart = Date.now();
+
+      let transcriptItems;
+      try {
+        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+      } catch (err) {
+        console.error('❌ YouTube transcript fetch failed:', err);
+        return res.status(400).json({
+          success: false,
+          error: 'Could not retrieve transcript from YouTube. The video may not have captions enabled, or may be private/age-restricted. Try uploading the MP3 directly.'
+        });
+      }
+
+      // Combine transcript segments into plain text
+      const transcript = transcriptItems.map(item => item.text).join(' ');
+      const transcriptTime = Date.now() - transcriptStart;
+      console.log(`✅ Transcript fetched in ${(transcriptTime / 1000).toFixed(1)}s`);
+      console.log(`📝 Transcript length: ${transcript.length} characters`);
+
+      if (transcript.length < 100) {
+        return res.status(400).json({
+          success: false,
+          error: 'YouTube transcript is too short. The video may not have meaningful captions.'
+        });
+      }
+
+      // Step 3: Run agents directly (no audio pipeline needed!)
+      console.log('🤖 Step 3: Running 5 AI agents...');
+      const agentsStart = Date.now();
+      const timestamp = Date.now();
+      const episodeId = `yt-${videoId}-${timestamp}`;
+
+      const growthPlan = await generateGrowthPlan(transcript, episodeId);
+      const agentsTime = Date.now() - agentsStart;
+
+      // Step 4: Store report
+      console.log('💾 Step 4: Storing report...');
+      const reportId = `rprt_${timestamp}_${Math.random().toString(36).substring(2, 11)}`;
+      const totalTime = Date.now() - startTime;
+
+      const reportData = {
+        id: reportId,
+        createdAt: new Date().toISOString(),
+        episodeId,
+        transcriptLength: transcript.length,
+        processingTime: totalTime,
+        transcript,
+        growthPlan,
+        source: 'youtube',
+        youtubeVideoId: videoId,
+      };
+
+      const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
+        access: 'public',
+        token: process.env.PGA2_READ_WRITE_TOKEN,
+        contentType: 'application/json',
+      });
+
+      const reportUrl = `https://podcastgrowthagent.com/#/report/${reportId}`;
+
+      console.log(`✅ Report stored: ${reportId}`);
+      console.log('🎉 YOUTUBE PIPELINE COMPLETE');
+      console.log(`⏱️  Total time: ${(totalTime / 1000).toFixed(1)}s`);
+      console.log(`   - Metadata: ${metadataTime}ms`);
+      console.log(`   - Transcript: ${(transcriptTime / 1000).toFixed(1)}s`);
+      console.log(`   - Agents: ${(agentsTime / 1000).toFixed(1)}s`);
+
+      return res.status(200).json({
+        success: true,
+        growth_plan: growthPlan,
+        metadata: {
+          episodeTitle: videoMeta.title,
+          podcastTitle: videoMeta.author,
+          episodeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          publishDate: new Date().toISOString(),
+          source: 'youtube',
+        },
+        reportId,
+        reportUrl,
+        reportBlobUrl: blob.url,
+        timing: {
+          resolve_time: metadataTime,
+          fetch_time: 0,
+          process_time: agentsTime + transcriptTime,
+          total_time: totalTime
+        }
+      });
+    }
+
+    // ========================================================================
+    // APPLE PODCASTS PATH: Resolve → download audio → transcribe → agents
     // ========================================================================
     // STEP 1: Resolve podcast URL to audio URL + metadata
     // ========================================================================
@@ -248,4 +369,46 @@ function sanitizeFilename(title: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .substring(0, 50);
+}
+
+// ============================================================================
+// YOUTUBE HELPERS
+// ============================================================================
+
+function isYouTubeUrl(url: string): boolean {
+  return (
+    url.includes('youtube.com/watch') ||
+    url.includes('youtu.be/') ||
+    url.includes('youtube.com/live/') ||
+    url.includes('youtube.com/shorts/') ||
+    url.includes('youtube.com/embed/')
+  );
+}
+
+function extractYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/live\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+async function getYouTubeMetadata(videoId: string): Promise<{ title: string; author: string }> {
+  const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+  const response = await fetch(oembedUrl);
+  if (!response.ok) {
+    return { title: 'Unknown Video', author: 'Unknown Channel' };
+  }
+  const data = await response.json() as any;
+  return {
+    title: data.title || 'Unknown Video',
+    author: data.author_name || 'Unknown Channel',
+  };
 }
