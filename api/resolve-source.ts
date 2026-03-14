@@ -2,7 +2,29 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { EpisodeMetadata, ResolveSourceResponse } from './agents/shared/types';
 
 // ============================================================================
-// URL PARSING - APPLE PODCASTS ONLY
+// URL DETECTION - Determine which platform a URL belongs to
+// ============================================================================
+
+type Platform = 'apple' | 'youtube' | 'unknown';
+
+function detectPlatform(url: string): Platform {
+  if (url.includes('podcasts.apple.com') || url.includes('itunes.apple.com')) {
+    return 'apple';
+  }
+  if (
+    url.includes('youtube.com/watch') ||
+    url.includes('youtu.be/') ||
+    url.includes('youtube.com/live/') ||
+    url.includes('youtube.com/shorts/') ||
+    url.includes('youtube.com/embed/')
+  ) {
+    return 'youtube';
+  }
+  return 'unknown';
+}
+
+// ============================================================================
+// URL PARSING - APPLE PODCASTS
 // ============================================================================
 
 interface ParsedAppleURL {
@@ -31,7 +53,7 @@ function parseApplePodcastsURL(url: string): ParsedAppleURL | null {
     // Extract: "holiday-magic-the-traditions"
     const pathMatch = url.match(/\/podcast\/([^\/]+)\/id\d+/);
     let titleHint = '';
-    
+
     if (pathMatch && pathMatch[1]) {
       // Convert URL slug to search query
       // "holiday-magic-the-traditions" → "holiday magic traditions"
@@ -57,6 +79,87 @@ function parseApplePodcastsURL(url: string): ParsedAppleURL | null {
     console.error('Error parsing Apple Podcasts URL:', error);
     return null;
   }
+}
+
+// ============================================================================
+// URL PARSING - YOUTUBE
+// ============================================================================
+
+/**
+ * Extract YouTube video ID from various URL formats:
+ * - https://www.youtube.com/watch?v=VIDEO_ID
+ * - https://youtu.be/VIDEO_ID
+ * - https://www.youtube.com/live/VIDEO_ID
+ * - https://www.youtube.com/embed/VIDEO_ID
+ */
+function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const patterns = [
+      /[?&]v=([a-zA-Z0-9_-]{11})/,           // youtube.com/watch?v=ID
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,        // youtu.be/ID
+      /youtube\.com\/live\/([a-zA-Z0-9_-]{11})/, // youtube.com/live/ID
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/, // youtube.com/embed/ID
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/, // youtube.com/shorts/ID
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch YouTube video title using the free oEmbed API (no API key required)
+ */
+async function getYouTubeVideoTitle(videoId: string): Promise<string | null> {
+  try {
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    console.log('📺 Fetching YouTube video title via oEmbed...');
+
+    const response = await fetch(oembedUrl);
+
+    if (!response.ok) {
+      console.error('YouTube oEmbed API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json() as any;
+    const title = data.title;
+
+    if (!title) {
+      console.error('No title found in YouTube oEmbed response');
+      return null;
+    }
+
+    console.log('📺 YouTube video title:', title);
+    return title;
+  } catch (error) {
+    console.error('Error fetching YouTube video title:', error);
+    return null;
+  }
+}
+
+/**
+ * Clean up a YouTube video title for podcast search.
+ * Removes common YouTube-specific suffixes and prefixes that wouldn't
+ * appear in podcast episode titles.
+ */
+function cleanYouTubeTitleForSearch(title: string): string {
+  return title
+    // Remove common YouTube suffixes
+    .replace(/\s*[|\-–—]\s*(full episode|official|podcast|video|clip|interview|highlight|recap).*$/i, '')
+    // Remove episode numbering prefixes like "EP. 123 - " or "#123:"
+    .replace(/^(ep\.?\s*#?\d+\s*[-:–—]\s*)/i, '')
+    // Remove channel name suffixes like " | The Joe Rogan Experience"
+    .replace(/\s*[|]\s*[^|]+$/, '')
+    // Clean up extra whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ============================================================================
@@ -200,6 +303,65 @@ async function searchEpisodeWithFallback(
 }
 
 // ============================================================================
+// YOUTUBE → LISTENNOTES SEARCH
+// ============================================================================
+
+/**
+ * Search ListenNotes for a podcast episode matching a YouTube video title.
+ * Uses a two-pass approach:
+ * 1. Search with cleaned title (removes YouTube-specific noise)
+ * 2. If no results, search with original title as fallback
+ */
+async function searchYouTubeEpisode(
+  cleanedTitle: string,
+  originalTitle: string
+): Promise<EpisodeMetadata | null> {
+  const apiKey = process.env.LISTENNOTES_API_KEY;
+
+  if (!apiKey) {
+    console.error('LISTENNOTES_API_KEY not found in environment');
+    return null;
+  }
+
+  try {
+    // ATTEMPT 1: Search with cleaned title
+    console.log('📺 YouTube → ListenNotes search attempt 1 (cleaned title)');
+    let episode = await searchAllPodcasts(apiKey, cleanedTitle);
+
+    // ATTEMPT 2: If cleaned title didn't work, try original
+    if (!episode && cleanedTitle !== originalTitle) {
+      console.log('📺 YouTube → ListenNotes search attempt 2 (original title)');
+      episode = await searchAllPodcasts(apiKey, originalTitle);
+    }
+
+    if (!episode) {
+      console.error('📺 No matching podcast episode found for YouTube video');
+      return null;
+    }
+
+    return {
+      episodeUrl: episode.listennotes_url || episode.link || '',
+      episodeTitle: episode.title_original || episode.title || 'Unknown Episode',
+      podcastTitle: episode.podcast?.title_original || episode.podcast?.title || 'Unknown Podcast',
+      publishDate: episode.pub_date_ms
+        ? new Date(episode.pub_date_ms).toISOString()
+        : new Date().toISOString(),
+      audioUrl: episode.audio || '',
+      audioDuration: episode.audio_length_sec,
+      podcastSocial: {
+        twitter: episode.podcast?.twitter_handle || undefined,
+        instagram: episode.podcast?.instagram_handle || undefined,
+        facebook: episode.podcast?.facebook_handle || undefined,
+        website: episode.podcast?.website || undefined
+      }
+    };
+  } catch (error) {
+    console.error('Error searching YouTube episode:', error);
+    return null;
+  }
+}
+
+// ============================================================================
 // API ENDPOINT
 // ============================================================================
 
@@ -235,42 +397,87 @@ export default async function handler(
 
   console.log('Resolving podcast URL:', url);
 
-  // Validate it's an Apple Podcasts URL
-  if (!url.includes('podcasts.apple.com') && !url.includes('itunes.apple.com')) {
+  const platform = detectPlatform(url);
+  console.log(`🔍 Detected platform: ${platform}`);
+
+  let metadata: EpisodeMetadata | null = null;
+
+  // ========================================================================
+  // APPLE PODCASTS
+  // ========================================================================
+  if (platform === 'apple') {
+    const parsed = parseApplePodcastsURL(url);
+
+    if (!parsed) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid Apple Podcasts URL format. Please provide a valid episode or podcast URL from podcasts.apple.com'
+      });
+      return;
+    }
+
+    if (!parsed.titleHint) {
+      res.status(400).json({
+        success: false,
+        error: 'Could not extract episode title from URL. Please ensure the URL includes the episode name in the path.'
+      });
+      return;
+    }
+
+    metadata = await searchEpisodeWithFallback(parsed.podcastId, parsed.titleHint);
+
+  // ========================================================================
+  // YOUTUBE
+  // ========================================================================
+  } else if (platform === 'youtube') {
+    const videoId = extractYouTubeVideoId(url);
+
+    if (!videoId) {
+      res.status(400).json({
+        success: false,
+        error: 'Could not extract video ID from YouTube URL. Please provide a valid YouTube video URL.'
+      });
+      return;
+    }
+
+    // Step 1: Get video title from YouTube oEmbed (free, no API key)
+    const videoTitle = await getYouTubeVideoTitle(videoId);
+
+    if (!videoTitle) {
+      res.status(400).json({
+        success: false,
+        error: 'Could not retrieve video title from YouTube. The video may be private or unavailable.'
+      });
+      return;
+    }
+
+    // Step 2: Clean up the title for better podcast search results
+    const searchQuery = cleanYouTubeTitleForSearch(videoTitle);
+    console.log(`📺 YouTube search query: "${searchQuery}" (from: "${videoTitle}")`);
+
+    // Step 3: Search ListenNotes globally for this episode
+    metadata = await searchYouTubeEpisode(searchQuery, videoTitle);
+
+  // ========================================================================
+  // UNSUPPORTED PLATFORM
+  // ========================================================================
+  } else {
     res.status(400).json({
       success: false,
-      error: 'Currently only Apple Podcasts URLs are supported. Please provide a URL from podcasts.apple.com'
+      error: 'Unsupported URL. Please provide a link from Apple Podcasts or YouTube.'
     });
     return;
   }
 
-  // Parse the URL
-  const parsed = parseApplePodcastsURL(url);
-  
-  if (!parsed) {
-    res.status(400).json({
-      success: false,
-      error: 'Invalid Apple Podcasts URL format. Please provide a valid episode or podcast URL from podcasts.apple.com'
-    });
-    return;
-  }
-
-  // Search for the episode using title hint
-  if (!parsed.titleHint) {
-    res.status(400).json({
-      success: false,
-      error: 'Could not extract episode title from URL. Please ensure the URL includes the episode name in the path.'
-    });
-    return;
-  }
-
-  // Use the new two-tier search with fallback
-  const metadata = await searchEpisodeWithFallback(parsed.podcastId, parsed.titleHint);
-
+  // ========================================================================
+  // VALIDATE RESULTS
+  // ========================================================================
   if (!metadata || !metadata.audioUrl) {
     res.status(404).json({
       success: false,
-      error: 'Could not find episode in ListenNotes database. The episode may be private, premium, geo-restricted, or not yet indexed. Please try uploading the MP3 file directly.'
+      error: platform === 'youtube'
+        ? 'Could not find a matching podcast episode for this YouTube video. The episode may not be indexed as a podcast yet, or the title may differ. Try pasting the Apple Podcasts link or uploading the MP3 directly.'
+        : 'Could not find episode in ListenNotes database. The episode may be private, premium, geo-restricted, or not yet indexed. Please try uploading the MP3 file directly.'
     });
     return;
   }
@@ -278,7 +485,8 @@ export default async function handler(
   console.log('✅ Successfully resolved episode:', {
     title: metadata.episodeTitle,
     podcast: metadata.podcastTitle,
-    hasAudio: !!metadata.audioUrl
+    hasAudio: !!metadata.audioUrl,
+    source: platform
   });
 
   const response: ResolveSourceResponse = {
