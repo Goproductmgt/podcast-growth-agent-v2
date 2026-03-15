@@ -263,7 +263,7 @@ export default async function handler(
       } catch (err) {
         console.error('❌ YouTube transcript fetch also failed:', err);
         sendEvent(res, 'error', {
-          error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts link or uploading the MP3 directly.'
+          error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts or Spotify link, or uploading the MP3 directly.'
         });
         res.end();
         return;
@@ -354,7 +354,7 @@ export default async function handler(
     }
 
     // ====================================================================
-    // APPLE PODCASTS PATH: Resolve → download → transcribe → agents
+    // APPLE PODCASTS / SPOTIFY PATH: Resolve → download → transcribe → agents
     // ====================================================================
     // STAGE 1: Resolve podcast URL
     // ====================================================================

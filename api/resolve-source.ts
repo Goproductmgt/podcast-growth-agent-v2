@@ -5,7 +5,7 @@ import { EpisodeMetadata, ResolveSourceResponse } from './agents/shared/types';
 // URL DETECTION - Determine which platform a URL belongs to
 // ============================================================================
 
-type Platform = 'apple' | 'youtube' | 'unknown';
+type Platform = 'apple' | 'youtube' | 'spotify' | 'unknown';
 
 function detectPlatform(url: string): Platform {
   if (url.includes('podcasts.apple.com') || url.includes('itunes.apple.com')) {
@@ -19,6 +19,9 @@ function detectPlatform(url: string): Platform {
     url.includes('youtube.com/embed/')
   ) {
     return 'youtube';
+  }
+  if (url.includes('open.spotify.com/episode/') || url.includes('spotify.link/')) {
+    return 'spotify';
   }
   return 'unknown';
 }
@@ -303,6 +306,99 @@ async function searchEpisodeWithFallback(
 }
 
 // ============================================================================
+// URL PARSING - SPOTIFY
+// ============================================================================
+
+/**
+ * Extract Spotify episode ID from URL:
+ * - https://open.spotify.com/episode/14HuB3tygVUmWI79O5cYz6
+ * - https://open.spotify.com/episode/14HuB3tygVUmWI79O5cYz6?si=abc123
+ */
+function extractSpotifyEpisodeId(url: string): string | null {
+  try {
+    const match = url.match(/episode\/([a-zA-Z0-9]+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch Spotify episode title using the free oEmbed API (no API key required)
+ */
+async function getSpotifyEpisodeTitle(episodeId: string): Promise<string | null> {
+  try {
+    const oembedUrl = `https://open.spotify.com/oembed?url=https://open.spotify.com/episode/${episodeId}`;
+    console.log('🎵 Fetching Spotify episode title via oEmbed...');
+
+    const response = await fetch(oembedUrl);
+
+    if (!response.ok) {
+      console.error('Spotify oEmbed API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json() as any;
+    const title = data.title?.trim();
+
+    if (!title) {
+      console.error('No title found in Spotify oEmbed response');
+      return null;
+    }
+
+    console.log('🎵 Spotify episode title:', title);
+    return title;
+  } catch (error) {
+    console.error('Error fetching Spotify episode title:', error);
+    return null;
+  }
+}
+
+/**
+ * Search ListenNotes for a podcast episode matching a Spotify episode title.
+ */
+async function searchSpotifyEpisode(
+  title: string
+): Promise<EpisodeMetadata | null> {
+  const apiKey = process.env.LISTENNOTES_API_KEY;
+
+  if (!apiKey) {
+    console.error('LISTENNOTES_API_KEY not found in environment');
+    return null;
+  }
+
+  try {
+    console.log('🎵 Spotify → ListenNotes search');
+    const episode = await searchAllPodcasts(apiKey, title);
+
+    if (!episode) {
+      console.error('🎵 No matching podcast episode found for Spotify episode');
+      return null;
+    }
+
+    return {
+      episodeUrl: episode.listennotes_url || episode.link || '',
+      episodeTitle: episode.title_original || episode.title || 'Unknown Episode',
+      podcastTitle: episode.podcast?.title_original || episode.podcast?.title || 'Unknown Podcast',
+      publishDate: episode.pub_date_ms
+        ? new Date(episode.pub_date_ms).toISOString()
+        : new Date().toISOString(),
+      audioUrl: episode.audio || '',
+      audioDuration: episode.audio_length_sec,
+      podcastSocial: {
+        twitter: episode.podcast?.twitter_handle || undefined,
+        instagram: episode.podcast?.instagram_handle || undefined,
+        facebook: episode.podcast?.facebook_handle || undefined,
+        website: episode.podcast?.website || undefined
+      }
+    };
+  } catch (error) {
+    console.error('Error searching Spotify episode:', error);
+    return null;
+  }
+}
+
+// ============================================================================
 // YOUTUBE → LISTENNOTES SEARCH
 // ============================================================================
 
@@ -459,12 +555,40 @@ export default async function handler(
     metadata = await searchYouTubeEpisode(searchQuery, videoTitle);
 
   // ========================================================================
+  // SPOTIFY
+  // ========================================================================
+  } else if (platform === 'spotify') {
+    const episodeId = extractSpotifyEpisodeId(url);
+
+    if (!episodeId) {
+      res.status(400).json({
+        success: false,
+        error: 'Could not extract episode ID from Spotify URL. Please provide a valid Spotify episode URL.'
+      });
+      return;
+    }
+
+    // Step 1: Get episode title from Spotify oEmbed (free, no API key)
+    const episodeTitle = await getSpotifyEpisodeTitle(episodeId);
+
+    if (!episodeTitle) {
+      res.status(400).json({
+        success: false,
+        error: 'Could not retrieve episode title from Spotify. The episode may be private or unavailable.'
+      });
+      return;
+    }
+
+    // Step 2: Search ListenNotes for this episode
+    metadata = await searchSpotifyEpisode(episodeTitle);
+
+  // ========================================================================
   // UNSUPPORTED PLATFORM
   // ========================================================================
   } else {
     res.status(400).json({
       success: false,
-      error: 'Unsupported URL. Please provide a link from Apple Podcasts or YouTube.'
+      error: 'Unsupported URL. Please provide a link from Apple Podcasts, Spotify, or YouTube.'
     });
     return;
   }
@@ -476,7 +600,9 @@ export default async function handler(
     res.status(404).json({
       success: false,
       error: platform === 'youtube'
-        ? 'Could not find a matching podcast episode for this YouTube video. The episode may not be indexed as a podcast yet, or the title may differ. Try pasting the Apple Podcasts link or uploading the MP3 directly.'
+        ? 'Could not find a matching podcast episode for this YouTube video. The episode may not be indexed as a podcast yet, or the title may differ. Try pasting the Apple Podcasts or Spotify link, or uploading the MP3 directly.'
+        : platform === 'spotify'
+        ? 'Could not find this Spotify episode in our podcast database. The episode may be a Spotify exclusive, or not yet indexed. Try pasting the Apple Podcasts link or uploading the MP3 directly.'
         : 'Could not find episode in ListenNotes database. The episode may be private, premium, geo-restricted, or not yet indexed. Please try uploading the MP3 file directly.'
     });
     return;

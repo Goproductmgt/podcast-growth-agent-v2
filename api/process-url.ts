@@ -227,7 +227,7 @@ export default async function handler(
           console.error('❌ YouTube transcript fetch also failed:', err);
           return res.status(400).json({
             success: false,
-            error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts link or uploading the MP3 directly.'
+            error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts or Spotify link, or uploading the MP3 directly.'
           });
         }
 
