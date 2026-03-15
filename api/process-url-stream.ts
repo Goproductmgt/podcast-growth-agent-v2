@@ -87,11 +87,11 @@ export default async function handler(
 
   try {
     // ====================================================================
-    // YOUTUBE PATH: Pull transcript directly, skip audio pipeline
+    // YOUTUBE PATH: Waterfall — try ListenNotes first, then YT transcript
     // ====================================================================
     if (isYouTubeUrl(url)) {
-      console.log('📺 YouTube URL detected — using transcript path');
-      sendEvent(res, 'stage', { stage: 'resolving', message: 'Fetching YouTube video info...' });
+      console.log('📺 YouTube URL detected — trying to find matching podcast episode');
+      sendEvent(res, 'stage', { stage: 'resolving', message: 'Searching for matching podcast episode...' });
 
       const videoId = extractYouTubeVideoId(url);
       if (!videoId) {
@@ -100,11 +100,153 @@ export default async function handler(
         return;
       }
 
-      // Get metadata
+      // Get YouTube metadata for context
       const videoMeta = await getYouTubeMetadata(videoId);
+      console.log(`📺 YouTube video: "${videoMeta.title}" by ${videoMeta.author}`);
+
+      // WATERFALL STEP 1: Try resolve-source (ListenNotes search via YouTube title)
+      let resolvedViaPodcast = false;
+      let resolveData: ResolveSourceResponse | null = null;
+
+      try {
+        const resolveResponse = await fetch(`${getBaseUrl(req)}/api/resolve-source`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+
+        if (resolveResponse.ok) {
+          resolveData = await resolveResponse.json() as ResolveSourceResponse;
+          if (resolveData.success && resolveData.metadata?.audioUrl) {
+            resolvedViaPodcast = true;
+            console.log(`✅ Found matching podcast: "${resolveData.metadata.episodeTitle}" on "${resolveData.metadata.podcastTitle}"`);
+          }
+        }
+      } catch (err) {
+        console.log(`📺 ListenNotes search failed, will try YouTube transcript: ${err instanceof Error ? err.message : err}`);
+      }
+
+      // If we found a podcast match, use the standard podcast pipeline
+      if (resolvedViaPodcast && resolveData?.metadata) {
+        console.log('📺 Using podcast audio pipeline for YouTube video');
+        sendEvent(res, 'stage', {
+          stage: 'resolved',
+          message: 'Matching podcast episode found!',
+          metadata: resolveData.metadata
+        });
+
+        // Fetch audio to blob
+        sendEvent(res, 'stage', { stage: 'fetching_audio', message: 'Downloading podcast audio...' });
+
+        const fetchResponse = await fetch(`${getBaseUrl(req)}/api/fetch-to-blob`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audioUrl: resolveData.metadata.audioUrl,
+            filename: sanitizeFilename(resolveData.metadata.episodeTitle || 'episode')
+          })
+        });
+
+        if (!fetchResponse.ok) {
+          const errorData = await fetchResponse.json() as any;
+          sendEvent(res, 'error', { error: errorData.error || 'Failed to download audio' });
+          res.end();
+          return;
+        }
+
+        const fetchData = await fetchResponse.json() as FetchToBlobResponse;
+
+        // Chunk + transcribe
+        sendEvent(res, 'stage', { stage: 'chunking', message: 'Splitting audio...' });
+
+        const timestamp = Date.now();
+        const localPath = `/tmp/podcast-${timestamp}.mp3`;
+        await downloadFile(fetchData.blobUrl!, localPath);
+
+        const chunksDir = await chunkAudioFile(localPath);
+
+        sendEvent(res, 'stage', { stage: 'transcribing', message: 'Transcribing audio...' });
+
+        const transcribeStart = Date.now();
+        const result = await transcribeAudioChunks(chunksDir);
+        const transcript = result.fullText;
+        const transcribeTime = Date.now() - transcribeStart;
+
+        // Run agents
+        sendEvent(res, 'stage', {
+          stage: 'agents',
+          message: 'Running AI agents...',
+          transcript_length: transcript.length
+        });
+
+        const episodeId = `episode-${timestamp}`;
+        const episodeUrl = resolveData.metadata.episodeUrl;
+
+        const growthPlan = await generateGrowthPlanStream(
+          transcript,
+          (agentName, agentResult) => {
+            sendEvent(res, 'agent_complete', {
+              agent: agentName,
+              success: agentResult.success,
+              data: agentResult.data,
+              error: agentResult.error,
+              processing_time: agentResult.processing_time
+            });
+          },
+          episodeId,
+          episodeUrl
+        );
+
+        const totalTime = Date.now() - startTime;
+
+        // Store report
+        sendEvent(res, 'stage', { stage: 'saving', message: 'Saving report...' });
+
+        const reportId = `rprt_${timestamp}_${Math.random().toString(36).substring(2, 11)}`;
+
+        const reportData = {
+          id: reportId,
+          createdAt: new Date().toISOString(),
+          episodeId: growthPlan.episode_id || episodeId,
+          transcriptLength: transcript.length,
+          processingTime: totalTime,
+          transcript: transcript,
+          growthPlan: growthPlan,
+        };
+
+        const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
+          access: 'public',
+          token: process.env.PGA2_READ_WRITE_TOKEN,
+          contentType: 'application/json',
+        });
+
+        const reportUrl = `https://podcastgrowthagent.com/#/report/${reportId}`;
+
+        console.log(`✅ YouTube→Podcast pipeline complete in ${(totalTime / 1000).toFixed(1)}s`);
+
+        sendEvent(res, 'complete', {
+          success: true,
+          growth_plan: growthPlan,
+          metadata: resolveData.metadata,
+          reportId,
+          reportUrl,
+          reportBlobUrl: blob.url,
+          metrics: {
+            total_time: `${(totalTime / 1000).toFixed(1)}s`,
+            transcription_time: `${(transcribeTime / 1000).toFixed(1)}s`,
+            transcript_length: transcript.length,
+          }
+        });
+
+        res.end();
+        return;
+      }
+
+      // WATERFALL STEP 2: No podcast match — try YouTube transcript as fallback
+      console.log('📺 No podcast match found, trying YouTube transcript fallback...');
       sendEvent(res, 'stage', {
         stage: 'resolved',
-        message: 'YouTube video found',
+        message: 'No podcast match found — trying YouTube captions...',
         metadata: {
           episodeTitle: videoMeta.title,
           podcastTitle: videoMeta.author,
@@ -113,16 +255,15 @@ export default async function handler(
         }
       });
 
-      // Pull transcript directly
       sendEvent(res, 'stage', { stage: 'transcribing', message: 'Fetching YouTube transcript...' });
 
       let transcriptItems;
       try {
         transcriptItems = await fetchYouTubeTranscript(videoId);
       } catch (err) {
-        console.error('❌ YouTube transcript fetch failed:', err);
+        console.error('❌ YouTube transcript fetch also failed:', err);
         sendEvent(res, 'error', {
-          error: 'Could not retrieve transcript from YouTube. The video may not have captions enabled, or may be private/age-restricted. Try uploading the MP3 directly.'
+          error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts link or uploading the MP3 directly.'
         });
         res.end();
         return;
@@ -132,7 +273,7 @@ export default async function handler(
       console.log(`📝 YouTube transcript: ${transcript.length} characters`);
 
       if (transcript.length < 100) {
-        sendEvent(res, 'error', { error: 'YouTube transcript is too short. The video may not have meaningful captions.' });
+        sendEvent(res, 'error', { error: 'YouTube transcript is too short. The video may not have meaningful captions. Try uploading the MP3 directly.' });
         res.end();
         return;
       }
@@ -187,7 +328,7 @@ export default async function handler(
 
       const reportUrl = `https://podcastgrowthagent.com/#/report/${reportId}`;
 
-      console.log(`✅ YouTube pipeline complete in ${(totalTime / 1000).toFixed(1)}s`);
+      console.log(`✅ YouTube transcript pipeline complete in ${(totalTime / 1000).toFixed(1)}s`);
 
       sendEvent(res, 'complete', {
         success: true,
