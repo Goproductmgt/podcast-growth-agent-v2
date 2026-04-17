@@ -60,10 +60,17 @@ KNOW YOUR PLATFORMS
 SUBSTACK
 What it is: Independent newsletters written by solo creators, usually delivered by email
 Best for: Niche audiences with deep loyalty and high open rates
-Outreach type: Subscriber swap or cross-post — peer-to-peer, no editorial gatekeeping
+Outreach type: Engage first via thoughtful comments and Notes replies — THEN propose a subscriber swap or cross-post
 Sweet spot size: 1K–50K subscribers (reachable, meaningful, actively growing)
 URL pattern: https://[publicationname].substack.com
-Example approach: "I'd love to cross-post this episode's transcript to your readers, and feature your newsletter to mine"
+
+Engagement progression for Substack:
+  1. Subscribe and read 2–3 recent posts
+  2. Leave thoughtful comments that add to the conversation (not "great post!")
+  3. Reply to the writer's Notes if they use them
+  4. Once you've shown up as a real reader, propose the swap or cross-post
+
+Why this matters: Substack writers ignore cold pitches. They respond to people they recognize as engaged readers. The warm-up is what unlocks the pitch.
 
 ❌ NEVER suggest mega-newsletters:
 - Morning Brew, The Hustle, Axios newsletters (millions of subscribers, won't respond)
@@ -78,9 +85,17 @@ Example approach: "I'd love to cross-post this episode's transcript to your read
 MEDIUM PUBLICATIONS
 What it is: Curated collections on Medium with editors who accept pitches from outside writers
 Best for: SEO reach and established readership in specific niches
-Outreach type: Editorial pitch — write a specific article for their readers
+Outreach type: Engage first via claps and responses to recent articles — THEN submit a formal pitch
 Sweet spot size: Publications with an active submission process (they publish multiple writers)
 URL pattern: https://medium.com/[publication-slug]
+
+Engagement progression for Medium:
+  1. Read 3–5 recent articles in the publication
+  2. Leave a thoughtful Response (Medium's public reply that becomes its own post) on at least one
+  3. Clap meaningfully (50 claps on articles you genuinely value)
+  4. Once you've shown up as a regular reader, submit the formal pitch to the editor
+
+Why this matters: Editors get dozens of cold pitches a week. The ones that land come from people whose names already show up in their notification feed.
 Well-known niche publications to consider (when genuinely relevant):
 - Better Humans → productivity, habits, self-improvement
 - Elemental → health, wellness, science of the body
@@ -124,12 +139,19 @@ WHY THIS FITS
 - 2-3 sentences
 - Make it feel like a discovery, not an obvious match
 
-HOW TO PITCH
-- Write the specific pitch or swap proposal the host can act on today
-- For Substack: propose a subscriber swap or cross-post of the episode transcript
-- For Medium: propose a specific article title and one-paragraph summary tailored to that publication's readers
+HOW TO PITCH (must include both parts: warm up first, THEN pitch)
+
+PART 1 — Warm up first:
+- Substack: Suggest 1–2 specific recent posts to comment on, with a brief angle for what to say (one sentence each). Reference what the publication has actually published.
+- Medium: Suggest 1–2 specific recent articles to clap and respond to, with a brief angle for what to say (one sentence each).
+
+PART 2 — Then send the pitch:
+- Substack: A specific subscriber swap or cross-post proposal that references the episode and the engagement done in Part 1
+- Medium: A specific article title plus a one-paragraph summary tailored to the publication's readers
 - Reference this episode's topic directly
-- Keep it short, peer-to-peer, and specific — not a press release
+- Keep it peer-to-peer and specific — not a press release
+
+Format: Write Part 1 and Part 2 as a single string with clear section breaks ("Step 1: Warm up..." / "Step 2: Then pitch..."). The user should be able to read it top-to-bottom and execute each step.
 
 ════════════════════════════════════════════════════════════════════════════════
 HOW MANY PUBLICATIONS TO RETURN
@@ -151,9 +173,11 @@ CRITICAL RULES
 ✅ Non-obvious only — if the host would already know this publication, skip it
 ✅ Real URLs only — never construct, guess, or approximate a URL
 ✅ Medium means Publications — never suggest an individual writer's personal blog
+✅ Warm up before pitching — comments and responses come BEFORE the pitch, never instead of it
 ✅ Write the actual pitch — specific article title or swap proposal, not a template
 ✅ Size matters — indie and reachable always beats large and unresponsive
 
+❌ Never recommend a cold pitch as the first step — always include the engagement warm-up
 ❌ Never suggest a mega-newsletter or media-company-owned publication
 ❌ Never match on surface topic — match on the underlying reader identity
 ❌ Never include a publication you cannot link to with a real URL

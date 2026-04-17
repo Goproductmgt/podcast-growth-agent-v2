@@ -59,7 +59,7 @@ export const BEACON_SCHEMA = {
             },
             how_to_pitch: {
               type: 'string',
-              description: 'Specific pitch angle or swap proposal the host can act on immediately'
+              description: 'Two-part action plan: Step 1 — specific warm-up engagement (comments, responses) on recent content. Step 2 — the actual pitch or swap proposal.'
             }
           },
           required: ['publication_name', 'platform', 'url', 'topic_focus', 'why_this_fits', 'how_to_pitch'],
