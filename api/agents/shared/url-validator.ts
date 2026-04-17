@@ -89,19 +89,18 @@ export async function validateUrl(url: string): Promise<ValidationResult> {
   return validateGenericWebsite(url);
 }
 
-// Reddit: use .json endpoint for reliable subreddit existence check
+// Reddit: pattern-only validation
+// Reddit aggressively blocks server-side requests from cloud IPs (Vercel),
+// which made network validation hang and falsely fail every URL.
+// Reddit's URL pattern is highly predictable, so we trust the pattern instead.
 async function validateReddit(parsed: URL): Promise<ValidationResult> {
-  const path = parsed.pathname.replace(/\/$/, '');
-  const jsonUrl = `https://www.reddit.com${path}.json`;
-  try {
-    const response = await fetchWithTimeout(jsonUrl, { method: 'GET' });
-    if (response.status === 200) {
-      return { valid: true };
-    }
-    return { valid: false, reason: `reddit_status_${response.status}` };
-  } catch (err: any) {
-    return { valid: false, reason: `network_error: ${err.message}` };
+  const path = parsed.pathname;
+  // Match /r/[name] or /r/[name]/ — alphanumerics and underscores only
+  const pattern = /^\/r\/[a-zA-Z0-9_]{2,21}\/?$/;
+  if (pattern.test(path)) {
+    return { valid: true };
   }
+  return { valid: false, reason: 'reddit_url_pattern_invalid' };
 }
 
 // Status-only check: HEAD request, accept any 2xx/3xx
