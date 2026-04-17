@@ -4,6 +4,8 @@ import { runHookAgent } from './hook';
 import { runSpotlightAgent } from './spotlight';
 import { runAmplifyAgent } from './amplify';
 import { runPulseAgent } from './pulse';
+import { runBridgeAgent } from './bridge';
+import { runBeaconAgent } from './beacon';
 
 /**
  * Runs all 5 agents in parallel and aggregates their results
@@ -18,17 +20,19 @@ export async function generateGrowthPlan(
   
   console.log('🚀 Starting Growth Plan generation...');
   console.log(`📄 Transcript length: ${transcript.length} characters`);
-  console.log(`⏱️  Running 5 agents in parallel...\n`);
-  
+  console.log(`⏱️  Running 7 agents in parallel...\n`);
+
   const startTime = Date.now();
-  
-  // Run all 5 agents simultaneously
+
+  // Run all 7 agents simultaneously
   const results = await Promise.allSettled([
     runInsightAgent(transcript),
     runHookAgent(transcript),
     runSpotlightAgent(transcript, episodeUrl),
     runAmplifyAgent(transcript),
-    runPulseAgent(transcript)
+    runPulseAgent(transcript),
+    runBridgeAgent(transcript),
+    runBeaconAgent(transcript)
   ]);
   
   const totalTime = Date.now() - startTime;
@@ -36,18 +40,20 @@ export async function generateGrowthPlan(
   console.log(`\n✅ All agents completed in ${(totalTime / 1000).toFixed(2)}s\n`);
   
   // Process results
-  const agentNames = ['insight', 'hook', 'spotlight', 'amplify', 'pulse'];
+  const agentNames = ['insight', 'hook', 'spotlight', 'amplify', 'pulse', 'bridge', 'beacon'];
   const errors: AgentError[] = [];
   let successCount = 0;
   let failureCount = 0;
-  
+
   // Extract agent data
   const agentData: any = {
     insight: null,
     hook: null,
     spotlight: null,
     amplify: null,
-    pulse: null
+    pulse: null,
+    bridge: null,
+    beacon: null
   };
   
   results.forEach((result, index) => {

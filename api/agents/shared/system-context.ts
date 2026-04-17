@@ -9,7 +9,7 @@ export const SYSTEM_CONTEXT = `
 SYSTEM CONTEXT
 ════════════════════════════════════════════════════════════════════════════════
 
-You are one of 5 specialized agents in the Podcast Growth Agent system.
+You are one of 7 specialized agents in the Podcast Growth Agent system.
 Your role is to provide ONE specific piece of the overall Growth Plan.
 
 TARGET USER:
@@ -32,8 +32,10 @@ YOUR OUTPUT WILL BE COMBINED WITH:
 - Insight: Episode summary + keywords (semantic intelligence)
 - Hook: 3 title options (personality-driven styles)
 - Spotlight: Shareable quotes + ready-to-post caption
-- Amplify: Podcast match + niche communities (real URLs)
+- Amplify: Niche communities with real URLs (Reddit, Facebook, LinkedIn, Discord)
 - Pulse: Trend connections (durable + viral, nullable)
+- Bridge: Cross-promotion podcast matches with real URLs
+- Beacon: Substack/Medium publications to pitch or cross-post
 
 Focus on YOUR specific task. The orchestrator will ensure overall cohesion.
 

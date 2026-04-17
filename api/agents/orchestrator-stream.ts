@@ -9,6 +9,8 @@ import { runHookAgent } from './hook';
 import { runSpotlightAgent } from './spotlight';
 import { runAmplifyAgent } from './amplify';
 import { runPulseAgent } from './pulse';
+import { runBridgeAgent } from './bridge';
+import { runBeaconAgent } from './beacon';
 
 export type AgentCompleteCallback = (
   agentName: string,
@@ -28,11 +30,11 @@ export async function generateGrowthPlanStream(
 
   console.log('🚀 Starting Growth Plan generation (streaming)...');
   console.log(`📄 Transcript length: ${transcript.length} characters`);
-  console.log(`⏱️  Running 5 agents in parallel...\n`);
+  console.log(`⏱️  Running 7 agents in parallel...\n`);
 
   const startTime = Date.now();
 
-  const agentNames = ['insight', 'hook', 'spotlight', 'amplify', 'pulse'];
+  const agentNames = ['insight', 'hook', 'spotlight', 'amplify', 'pulse', 'bridge', 'beacon'];
   const errors: AgentError[] = [];
   let successCount = 0;
   let failureCount = 0;
@@ -41,7 +43,9 @@ export async function generateGrowthPlanStream(
     hook: null,
     spotlight: null,
     amplify: null,
-    pulse: null
+    pulse: null,
+    bridge: null,
+    beacon: null
   };
 
   // Wrap each agent in a promise that calls onAgentComplete when done
@@ -84,13 +88,15 @@ export async function generateGrowthPlanStream(
     }
   };
 
-  // Run all 5 agents - each fires onAgentComplete independently
+  // Run all 7 agents - each fires onAgentComplete independently
   await Promise.all([
     wrapAgent('insight', runInsightAgent(transcript)),
     wrapAgent('hook', runHookAgent(transcript)),
     wrapAgent('spotlight', runSpotlightAgent(transcript, episodeUrl)),
     wrapAgent('amplify', runAmplifyAgent(transcript)),
-    wrapAgent('pulse', runPulseAgent(transcript))
+    wrapAgent('pulse', runPulseAgent(transcript)),
+    wrapAgent('bridge', runBridgeAgent(transcript)),
+    wrapAgent('beacon', runBeaconAgent(transcript))
   ]);
 
   const totalTime = Date.now() - startTime;

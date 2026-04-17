@@ -19,6 +19,8 @@ export interface GrowthPlan {
     spotlight: any | null;
     amplify: any | null;
     pulse: any | null;
+    bridge: any | null;
+    beacon: any | null;
   };
   errors: AgentError[];
   summary: {
@@ -42,7 +44,7 @@ export interface AgentConfig {
   name: string;
   model: string; // 'gpt-5.4-pro'
   temperature: number;
-  reasoning_effort: 'minimal' | 'low' | 'medium' | 'high';
+  reasoning_effort: 'low' | 'medium' | 'high';
   verbosity: 'low' | 'medium' | 'high';
   max_tokens: number;
   timeout_ms: number;
