@@ -85,6 +85,82 @@ function parseApplePodcastsURL(url: string): ParsedAppleURL | null {
 }
 
 // ============================================================================
+// ITUNES LOOKUP - DIRECT EPISODE RESOLUTION (PRIMARY APPLE PATH)
+// ============================================================================
+
+/**
+ * Resolve an Apple Podcasts episode via Apple's free iTunes Lookup API.
+ * Uses the episodeId from the URL — deterministic, no fuzzy text matching.
+ *
+ * Returns null if:
+ * - The URL has no episodeId (podcast-level URL)
+ * - The episode is outside the lookup window (~200 most recent episodes)
+ * - The feed exposes no audio URL
+ *
+ * Caller should fall back to ListenNotes search when this returns null.
+ */
+async function resolveAppleViaiTunesLookup(
+  parsed: ParsedAppleURL
+): Promise<EpisodeMetadata | null> {
+  if (!parsed.episodeId) return null;
+
+  try {
+    const targetId = parseInt(parsed.episodeId, 10);
+    if (Number.isNaN(targetId)) return null;
+
+    const lookupUrl = `https://itunes.apple.com/lookup?id=${parsed.podcastId}&entity=podcastEpisode&limit=200`;
+    console.log('🍎 iTunes Lookup → searching feed for episode', {
+      podcastId: parsed.podcastId,
+      episodeId: parsed.episodeId
+    });
+
+    const response = await fetch(lookupUrl);
+    if (!response.ok) {
+      console.error('iTunes Lookup API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json() as any;
+    const episode = data.results?.find(
+      (r: any) => r.wrapperType === 'podcastEpisode' && r.trackId === targetId
+    );
+
+    if (!episode) {
+      console.log('🍎 Episode not in iTunes Lookup window — falling back to ListenNotes');
+      return null;
+    }
+
+    // episodeUrl is the canonical full audio; previewUrl is sometimes a clip but
+    // for most podcast feeds matches episodeUrl. Prefer episodeUrl, fall back to previewUrl.
+    const audioUrl = episode.episodeUrl || episode.previewUrl;
+    if (!audioUrl) {
+      console.error('🍎 iTunes Lookup found episode but no audio URL exposed');
+      return null;
+    }
+
+    console.log('✅ Resolved via iTunes Lookup:', {
+      title: episode.trackName,
+      podcast: episode.collectionName
+    });
+
+    return {
+      // Preserve the user's submitted Apple URL — listeners get a real podcast app deep link.
+      episodeUrl: parsed.originalUrl,
+      episodeTitle: episode.trackName || 'Unknown Episode',
+      podcastTitle: episode.collectionName || 'Unknown Podcast',
+      publishDate: episode.releaseDate || new Date().toISOString(),
+      audioUrl,
+      audioDuration: typeof episode.trackTimeMillis === 'number'
+        ? Math.round(episode.trackTimeMillis / 1000)
+        : undefined
+    };
+  } catch (error) {
+    console.error('Error in iTunes Lookup:', error);
+    return null;
+  }
+}
+
+// ============================================================================
 // URL PARSING - YOUTUBE
 // ============================================================================
 
@@ -258,10 +334,11 @@ async function searchAllPodcasts(
  */
 async function searchEpisodeWithFallback(
   podcastId: string,
-  titleQuery: string
+  titleQuery: string,
+  originalUrl?: string
 ): Promise<EpisodeMetadata | null> {
   const apiKey = process.env.LISTENNOTES_API_KEY;
-  
+
   if (!apiKey) {
     console.error('LISTENNOTES_API_KEY not found in environment');
     return null;
@@ -270,7 +347,7 @@ async function searchEpisodeWithFallback(
   try {
     // ATTEMPT 1: Search within the specific podcast
     let episode = await searchWithinPodcast(apiKey, podcastId, titleQuery);
-    
+
     // ATTEMPT 2: If not found, search globally
     if (!episode) {
       episode = await searchAllPodcasts(apiKey, titleQuery);
@@ -282,9 +359,10 @@ async function searchEpisodeWithFallback(
       return null;
     }
 
-    // Extract and return metadata
+    // Extract and return metadata. Prefer the user's submitted URL for the spotlight
+    // share link — listeners get a real podcast app link instead of a ListenNotes redirect.
     return {
-      episodeUrl: episode.listennotes_url || episode.link || '',
+      episodeUrl: originalUrl || episode.listennotes_url || episode.link || '',
       episodeTitle: episode.title_original || episode.title || 'Unknown Episode',
       podcastTitle: episode.podcast?.title_original || episode.podcast?.title || 'Unknown Podcast',
       publishDate: episode.pub_date_ms 
@@ -358,7 +436,8 @@ async function getSpotifyEpisodeTitle(episodeId: string): Promise<string | null>
  * Search ListenNotes for a podcast episode matching a Spotify episode title.
  */
 async function searchSpotifyEpisode(
-  title: string
+  title: string,
+  originalUrl?: string
 ): Promise<EpisodeMetadata | null> {
   const apiKey = process.env.LISTENNOTES_API_KEY;
 
@@ -377,7 +456,7 @@ async function searchSpotifyEpisode(
     }
 
     return {
-      episodeUrl: episode.listennotes_url || episode.link || '',
+      episodeUrl: originalUrl || episode.listennotes_url || episode.link || '',
       episodeTitle: episode.title_original || episode.title || 'Unknown Episode',
       podcastTitle: episode.podcast?.title_original || episode.podcast?.title || 'Unknown Podcast',
       publishDate: episode.pub_date_ms
@@ -410,7 +489,8 @@ async function searchSpotifyEpisode(
  */
 async function searchYouTubeEpisode(
   cleanedTitle: string,
-  originalTitle: string
+  originalTitle: string,
+  originalUrl?: string
 ): Promise<EpisodeMetadata | null> {
   const apiKey = process.env.LISTENNOTES_API_KEY;
 
@@ -436,7 +516,7 @@ async function searchYouTubeEpisode(
     }
 
     return {
-      episodeUrl: episode.listennotes_url || episode.link || '',
+      episodeUrl: originalUrl || episode.listennotes_url || episode.link || '',
       episodeTitle: episode.title_original || episode.title || 'Unknown Episode',
       podcastTitle: episode.podcast?.title_original || episode.podcast?.title || 'Unknown Podcast',
       publishDate: episode.pub_date_ms
@@ -512,15 +592,26 @@ export default async function handler(
       return;
     }
 
-    if (!parsed.titleHint) {
-      res.status(400).json({
-        success: false,
-        error: 'Could not extract episode title from URL. Please ensure the URL includes the episode name in the path.'
-      });
-      return;
+    // PRIMARY: iTunes Lookup using episodeId from the URL.
+    // Deterministic, no fuzzy text match — handles new episodes that ListenNotes
+    // hasn't indexed yet. Returns null when episodeId is absent or the episode
+    // is outside Apple's lookup window, in which case we fall through to ListenNotes.
+    if (parsed.episodeId) {
+      metadata = await resolveAppleViaiTunesLookup(parsed);
     }
 
-    metadata = await searchEpisodeWithFallback(parsed.podcastId, parsed.titleHint);
+    // FALLBACK: ListenNotes title search (handles podcast-level URLs and very
+    // old episodes outside the iTunes Lookup window).
+    if (!metadata) {
+      if (!parsed.titleHint) {
+        res.status(400).json({
+          success: false,
+          error: 'Could not extract episode title from URL. Please ensure the URL includes the episode name in the path.'
+        });
+        return;
+      }
+      metadata = await searchEpisodeWithFallback(parsed.podcastId, parsed.titleHint, parsed.originalUrl);
+    }
 
   // ========================================================================
   // YOUTUBE
@@ -552,7 +643,7 @@ export default async function handler(
     console.log(`📺 YouTube search query: "${searchQuery}" (from: "${videoTitle}")`);
 
     // Step 3: Search ListenNotes globally for this episode
-    metadata = await searchYouTubeEpisode(searchQuery, videoTitle);
+    metadata = await searchYouTubeEpisode(searchQuery, videoTitle, url);
 
   // ========================================================================
   // SPOTIFY
@@ -580,7 +671,7 @@ export default async function handler(
     }
 
     // Step 2: Search ListenNotes for this episode
-    metadata = await searchSpotifyEpisode(episodeTitle);
+    metadata = await searchSpotifyEpisode(episodeTitle, url);
 
   // ========================================================================
   // UNSUPPORTED PLATFORM
