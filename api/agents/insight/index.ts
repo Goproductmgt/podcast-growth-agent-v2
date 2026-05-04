@@ -3,16 +3,12 @@
 // Executes the Insight agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { INSIGHT_CONFIG } from './config';
 import { INSIGHT_PROMPT } from './prompt';
 import { INSIGHT_SCHEMA, InsightOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -36,7 +32,7 @@ export async function runInsightAgent(transcript: string): Promise<AgentResult> 
     const fullPrompt = buildSystemPrompt('Insight', INSIGHT_PROMPT, transcript);
     
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: INSIGHT_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: INSIGHT_CONFIG.max_tokens,

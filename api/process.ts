@@ -31,7 +31,7 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
-    const { blobUrl, episodeUrl } = req.body;
+    const { blobUrl, episodeUrl, sourceUrl, metadata } = req.body;
 
     if (!blobUrl) {
       return res.status(400).json({ 
@@ -94,6 +94,8 @@ export default async function handler(
       processingTime: totalTime,
       transcript: transcript,  // NEW: Store full transcript for agent re-runs
       growthPlan: growthPlan,
+      sourceUrl: sourceUrl || episodeUrl || metadata?.episodeUrl,
+      metadata: metadata || (episodeUrl ? { episodeUrl } : undefined),
     };
 
     // Store in Vercel Blob at /reports/[reportId].json

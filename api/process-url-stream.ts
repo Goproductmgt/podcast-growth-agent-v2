@@ -212,6 +212,11 @@ export default async function handler(
           processingTime: totalTime,
           transcript: transcript,
           growthPlan: growthPlan,
+          sourceUrl: url,
+          metadata: {
+            ...resolveData.metadata,
+            sourceUrl: url
+          },
         };
 
         const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
@@ -317,7 +322,15 @@ export default async function handler(
         transcript,
         growthPlan,
         source: 'youtube',
+        sourceUrl: url,
         youtubeVideoId: videoId,
+        metadata: {
+          episodeTitle: videoMeta.title,
+          podcastTitle: videoMeta.author,
+          episodeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+          sourceUrl: url,
+          source: 'youtube',
+        },
       };
 
       const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
@@ -466,6 +479,11 @@ export default async function handler(
       processingTime: totalTime,
       transcript: transcript,
       growthPlan: growthPlan,
+      sourceUrl: url,
+      metadata: resolveData.metadata ? {
+        ...resolveData.metadata,
+        sourceUrl: url
+      } : undefined,
     };
 
     const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {

@@ -3,16 +3,12 @@
 // Executes the Hook agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { HOOK_CONFIG } from './config';
 import { HOOK_PROMPT } from './prompt';
 import { HOOK_SCHEMA, HookOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -36,7 +32,7 @@ export async function runHookAgent(transcript: string): Promise<AgentResult> {
     const fullPrompt = buildSystemPrompt('Hook', HOOK_PROMPT, transcript);
     
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: HOOK_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: HOOK_CONFIG.max_tokens,

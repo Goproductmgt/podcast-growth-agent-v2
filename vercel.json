@@ -4,5 +4,15 @@
       "maxDuration": 300,
       "includeFiles": "node_modules/ffmpeg-static/ffmpeg"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/site/:siteSlug/episodes/:episodeSlug/llm.txt",
+      "destination": "/api/sites/get-episode-llm?siteSlug=:siteSlug&episodeSlug=:episodeSlug"
+    },
+    {
+      "source": "/site/:siteSlug/episodes/:episodeSlug",
+      "destination": "/api/sites/get-episode?siteSlug=:siteSlug&episodeSlug=:episodeSlug&format=html"
+    }
+  ]
 }

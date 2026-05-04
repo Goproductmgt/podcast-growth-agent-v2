@@ -1,6 +1,6 @@
 // ============================================================================
 // STREAMING ORCHESTRATOR
-// Runs all 5 agents in parallel, fires callback as each completes
+// Runs all 7 agents in parallel, fires callback as each completes
 // ============================================================================
 
 import { GrowthPlan, AgentResult, AgentError } from './shared/types';
@@ -18,7 +18,7 @@ export type AgentCompleteCallback = (
 ) => void;
 
 /**
- * Runs all 5 agents in parallel, calling onAgentComplete as each finishes.
+ * Runs all 7 agents in parallel, calling onAgentComplete as each finishes.
  * Returns the complete GrowthPlan when all are done.
  */
 export async function generateGrowthPlanStream(

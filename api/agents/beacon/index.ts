@@ -3,17 +3,13 @@
 // Executes the Beacon agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { filterByValidUrls } from '../shared/url-validator';
 import { BEACON_CONFIG } from './config';
 import { BEACON_PROMPT } from './prompt';
 import { BEACON_SCHEMA, BeaconOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -37,7 +33,7 @@ export async function runBeaconAgent(transcript: string): Promise<AgentResult> {
     const fullPrompt = buildSystemPrompt('Beacon', BEACON_PROMPT, transcript);
 
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: BEACON_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: BEACON_CONFIG.max_tokens,

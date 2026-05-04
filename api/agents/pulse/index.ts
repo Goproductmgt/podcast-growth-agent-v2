@@ -3,16 +3,12 @@
 // Executes the Pulse agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { PULSE_CONFIG } from './config';
 import { PULSE_PROMPT } from './prompt';
 import { PULSE_SCHEMA, PulseOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -36,7 +32,7 @@ export async function runPulseAgent(transcript: string): Promise<AgentResult> {
     const fullPrompt = buildSystemPrompt('Pulse', PULSE_PROMPT, transcript);
     
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: PULSE_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: PULSE_CONFIG.max_tokens,

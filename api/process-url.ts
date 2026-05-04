@@ -117,10 +117,11 @@ export default async function handler(
 
       const videoId = extractYouTubeVideoId(url);
       if (!videoId) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'Could not extract video ID from YouTube URL.'
         });
+        return;
       }
 
       // Get YouTube metadata for context
@@ -159,10 +160,11 @@ export default async function handler(
 
             if (!fetchResponse.ok) {
               const errorData = await fetchResponse.json() as ErrorResponse;
-              return res.status(fetchResponse.status).json({
+              res.status(fetchResponse.status).json({
                 success: false,
                 error: errorData.error || 'Failed to download audio'
               });
+              return;
             }
 
             const fetchData = await fetchResponse.json() as FetchToBlobResponse;
@@ -177,16 +179,22 @@ export default async function handler(
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 blobUrl: fetchData.blobUrl,
-                episodeUrl: resolveData.metadata.episodeUrl
+                episodeUrl: resolveData.metadata.episodeUrl,
+                sourceUrl: url,
+                metadata: {
+                  ...resolveData.metadata,
+                  sourceUrl: url
+                }
               })
             });
 
             if (!processResponse.ok) {
               const errorData = await processResponse.json() as ErrorResponse;
-              return res.status(processResponse.status).json({
+              res.status(processResponse.status).json({
                 success: false,
                 error: errorData.error || 'Failed to process podcast'
               });
+              return;
             }
 
             const processData = await processResponse.json() as ProcessResponse;
@@ -195,7 +203,7 @@ export default async function handler(
 
             console.log(`✅ YouTube→Podcast pipeline complete in ${(totalTime / 1000).toFixed(1)}s`);
 
-            return res.status(200).json({
+            res.status(200).json({
               success: true,
               growth_plan: processData.growth_plan,
               metadata: resolveData.metadata,
@@ -209,6 +217,7 @@ export default async function handler(
                 total_time: totalTime
               }
             });
+            return;
           }
         }
       } catch (err) {
@@ -225,10 +234,11 @@ export default async function handler(
           transcriptItems = await fetchYouTubeTranscript(videoId);
         } catch (err) {
           console.error('❌ YouTube transcript fetch also failed:', err);
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             error: 'This YouTube video doesn\'t appear to be a podcast episode, and we couldn\'t retrieve its transcript. Try pasting your Apple Podcasts or Spotify link, or uploading the MP3 directly.'
           });
+          return;
         }
 
         const transcript = transcriptItems.map(item => item.text).join(' ');
@@ -236,10 +246,11 @@ export default async function handler(
         console.log(`📝 YouTube transcript: ${transcript.length} characters (${(transcriptTime / 1000).toFixed(1)}s)`);
 
         if (transcript.length < 100) {
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             error: 'YouTube transcript is too short. The video may not have meaningful captions. Try uploading the MP3 directly.'
           });
+          return;
         }
 
         // Run agents directly
@@ -264,7 +275,15 @@ export default async function handler(
           transcript,
           growthPlan,
           source: 'youtube',
+          sourceUrl: url,
           youtubeVideoId: videoId,
+          metadata: {
+            episodeTitle: videoMeta.title,
+            podcastTitle: videoMeta.author,
+            episodeUrl: `https://www.youtube.com/watch?v=${videoId}`,
+            sourceUrl: url,
+            source: 'youtube',
+          },
         };
 
         const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {
@@ -277,7 +296,7 @@ export default async function handler(
 
         console.log(`✅ YouTube transcript pipeline complete in ${(totalTime / 1000).toFixed(1)}s`);
 
-        return res.status(200).json({
+        res.status(200).json({
           success: true,
           growth_plan: growthPlan,
           metadata: {
@@ -297,6 +316,7 @@ export default async function handler(
             total_time: totalTime
           }
         });
+        return;
       }
     }
 
@@ -376,7 +396,12 @@ export default async function handler(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         blobUrl: fetchData.blobUrl,
-        episodeUrl: resolveData.metadata?.episodeUrl  // NEW: Pass episode URL
+        episodeUrl: resolveData.metadata?.episodeUrl,  // NEW: Pass episode URL
+        sourceUrl: url,
+        metadata: resolveData.metadata ? {
+          ...resolveData.metadata,
+          sourceUrl: url
+        } : undefined
       })
     });
 

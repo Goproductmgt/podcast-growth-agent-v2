@@ -8,7 +8,7 @@ import { runBridgeAgent } from './bridge';
 import { runBeaconAgent } from './beacon';
 
 /**
- * Runs all 5 agents in parallel and aggregates their results
+ * Runs all 7 agents in parallel and aggregates their results.
  * Uses Promise.allSettled for graceful degradation
  * Returns complete GrowthPlan even if some agents fail
  */
