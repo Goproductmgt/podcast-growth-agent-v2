@@ -3,17 +3,13 @@
 // Executes the Amplify agent with OpenAI Responses API (GPT-5)
 // ============================================================================
 
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { filterByValidUrls } from '../shared/url-validator';
 import { AMPLIFY_CONFIG } from './config';
 import { AMPLIFY_PROMPT } from './prompt';
 import { AMPLIFY_SCHEMA, AmplifyOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -37,7 +33,7 @@ export async function runAmplifyAgent(transcript: string): Promise<AgentResult> 
     const fullPrompt = buildSystemPrompt('Amplify', AMPLIFY_PROMPT, transcript);
     
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: AMPLIFY_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: AMPLIFY_CONFIG.max_tokens,

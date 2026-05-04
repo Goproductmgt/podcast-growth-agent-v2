@@ -19,7 +19,7 @@ import { generateGrowthPlanStream } from './agents/orchestrator-stream';
 //   event: complete     → Final growth plan + report info
 //   event: error        → Error occurred
 //
-// Accepts same body as process.ts: { blobUrl, episodeUrl? }
+// Accepts same body as process.ts: { blobUrl, episodeUrl?, sourceUrl?, metadata? }
 // ============================================================================
 
 export const config = {
@@ -57,7 +57,7 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
-    const { blobUrl, episodeUrl } = req.body;
+    const { blobUrl, episodeUrl, sourceUrl, metadata } = req.body;
 
     if (!blobUrl) {
       sendEvent(res, 'error', { error: 'blobUrl is required' });
@@ -138,6 +138,8 @@ export default async function handler(
       processingTime: totalTime,
       transcript: transcript,
       growthPlan: growthPlan,
+      sourceUrl: sourceUrl || episodeUrl || metadata?.episodeUrl,
+      metadata: metadata || (episodeUrl ? { episodeUrl } : undefined),
     };
 
     const blob = await put(`reports/${reportId}.json`, JSON.stringify(reportData), {

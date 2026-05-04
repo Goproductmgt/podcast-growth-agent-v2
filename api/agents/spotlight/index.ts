@@ -2,16 +2,12 @@
 // AGENT: SPOTLIGHT - Runner
 // Executes the Spotlight agent with OpenAI Responses API (GPT-5)
 // ============================================================================
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../shared/system-context';
 import { AgentResult } from '../shared/types';
+import { getOpenAIClient } from '../shared/openai-client';
 import { SPOTLIGHT_CONFIG } from './config';
 import { SPOTLIGHT_PROMPT } from './prompt';
 import { SPOTLIGHT_SCHEMA, SpotlightOutput } from './types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OpenAI
-});
 
 // Type definition for message output item
 interface MessageOutputItem {
@@ -38,7 +34,7 @@ export async function runSpotlightAgent(
     const fullPrompt = buildSystemPrompt('Spotlight', SPOTLIGHT_PROMPT, transcript);
     
     // Call OpenAI Responses API (GPT-5)
-    const response = await openai.responses.create({
+    const response = await getOpenAIClient().responses.create({
       model: SPOTLIGHT_CONFIG.model,
       input: fullPrompt,
       max_output_tokens: SPOTLIGHT_CONFIG.max_tokens,
